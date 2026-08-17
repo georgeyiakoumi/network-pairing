@@ -62,7 +62,9 @@ export function MultiSelectCombobox({
           {(values: Option[]) => (
             <React.Fragment>
               {values.map(v => (
-                <ComboboxChip key={v.id}>{displayLabel(v)}</ComboboxChip>
+                <ComboboxChip key={v.id} className="min-w-0">
+                  <span className="truncate">{displayLabel(v)}</span>
+                </ComboboxChip>
               ))}
               {!atMax && <ComboboxChipsInput placeholder={values.length === 0 ? placeholder : ''} />}
             </React.Fragment>

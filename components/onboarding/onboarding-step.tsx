@@ -5,14 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 interface OnboardingStepProps {
   title: string
   description?: string
+  action?: React.ReactNode
   children: React.ReactNode
 }
 
-export function OnboardingStep({ title, description, children }: OnboardingStepProps) {
+export function OnboardingStep({ title, description, action, children }: OnboardingStepProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">{title}</CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-lg">{title}</CardTitle>
+          {action}
+        </div>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent className="flex flex-col gap-6">

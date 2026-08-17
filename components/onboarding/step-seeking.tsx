@@ -1,5 +1,6 @@
 'use client'
 
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { OnboardingStep } from './onboarding-step'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -17,6 +18,7 @@ interface StepSeekingProps {
   specificNeeds: Option[]
   goal: string
   error: string | null
+  action?: React.ReactNode
   onRelationshipPrimaryChange: (id: string) => void
   onRelationshipSecondaryChange: (ids: string[]) => void
   onProfessionIdChange: (id: string) => void
@@ -32,6 +34,7 @@ export function StepSeeking({
   specificNeeds,
   goal,
   error,
+  action,
   onRelationshipPrimaryChange,
   onRelationshipSecondaryChange,
   onProfessionIdChange,
@@ -39,7 +42,7 @@ export function StepSeeking({
   onGoalChange,
 }: StepSeekingProps) {
   return (
-    <OnboardingStep title="Who are you looking for?" description="Help us find the right people for you.">
+    <OnboardingStep title="Who are you looking for?" action={action}>
 
         <RelationshipTypeSelector
           types={RELATIONSHIP_TYPES}
@@ -49,38 +52,42 @@ export function StepSeeking({
           onSecondaryChange={onRelationshipSecondaryChange}
         />
 
-        <div className="flex flex-col gap-2">
-          <Label>
-            What profession or expertise?{' '}
-            <span className="text-muted-foreground font-normal">(optional)</span>
-          </Label>
-          <ProfessionCombobox
-            professions={professions}
-            value={professionId}
-            onValueChange={onProfessionIdChange}
-            placeholder="Any profession"
-          />
-          {professionId && (
-            <button
-              type="button"
-              onClick={() => onProfessionIdChange('')}
-              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground self-start"
-            >
-              Clear
-            </button>
-          )}
-        </div>
+        <FieldGroup>
+          <Field>
+            <FieldLabel>
+              What profession or expertise?{' '}
+              <span className="text-muted-foreground font-normal">(optional)</span>
+            </FieldLabel>
+            <ProfessionCombobox
+              professions={professions}
+              value={professionId}
+              onValueChange={onProfessionIdChange}
+              placeholder="Any profession"
+            />
+            {professionId && (
+              <button
+                type="button"
+                onClick={() => onProfessionIdChange('')}
+                className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground self-start"
+              >
+                Clear
+              </button>
+            )}
+          </Field>
+        </FieldGroup>
 
-        <div className="flex flex-col gap-2">
-          <Label>What specifically do you need?</Label>
-          <MultiSelectCombobox
-            options={SEEKING_NEEDS_OPTIONS}
-            value={specificNeeds}
-            onValueChange={onSpecificNeedsChange}
-            placeholder="Select up to 3…"
-            max={3}
-          />
-        </div>
+        <FieldGroup>
+          <Field>
+            <FieldLabel>What specifically do you need?</FieldLabel>
+            <MultiSelectCombobox
+              options={SEEKING_NEEDS_OPTIONS}
+              value={specificNeeds}
+              onValueChange={onSpecificNeedsChange}
+              placeholder="Select up to 3…"
+              max={3}
+            />
+          </Field>
+        </FieldGroup>
 
         <div className="flex flex-col gap-2">
           <Label>

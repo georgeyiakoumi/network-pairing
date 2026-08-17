@@ -11,6 +11,7 @@ interface StepOffersProps {
   selectedOffers: Option[]
   primaryProfessionId: string
   secondaryProfessionId: string
+  action?: React.ReactNode
   onSelectedOffersChange: (offers: Option[]) => void
 }
 
@@ -20,10 +21,11 @@ export function StepOffers({
   selectedOffers,
   primaryProfessionId,
   secondaryProfessionId,
+  action,
   onSelectedOffersChange,
 }: StepOffersProps) {
   return (
-    <OnboardingStep title="What do you offer?">
+    <OnboardingStep title="What do you offer?" action={action}>
       <MultiSelectCombobox
         options={offers}
         value={selectedOffers}

@@ -1,7 +1,9 @@
 'use client'
 
 import { Input } from '@/components/ui/input'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { OnboardingStep } from './onboarding-step'
 import type { Option } from './types'
@@ -15,6 +17,7 @@ interface StepAboutProps {
   graduationYear: string
   locationId: string
   locations: Option[]
+  action?: React.ReactNode
   onFirstNameChange: (v: string) => void
   onLastNameChange: (v: string) => void
   onGraduationYearChange: (v: string) => void
@@ -27,32 +30,37 @@ export function StepAbout({
   graduationYear,
   locationId,
   locations,
+  action,
   onFirstNameChange,
   onLastNameChange,
   onGraduationYearChange,
   onLocationIdChange,
 }: StepAboutProps) {
   return (
-    <OnboardingStep title="About you">
+    <OnboardingStep title="About you" action={action}>
         <div className="flex gap-3">
-          <div className="flex flex-col gap-1.5 flex-1">
-            <Label htmlFor="firstName">First name</Label>
-            <Input
-              id="firstName"
-              value={firstName}
-              onChange={e => onFirstNameChange(e.target.value)}
-              placeholder="Jane"
-            />
-          </div>
-          <div className="flex flex-col gap-1.5 flex-1">
-            <Label htmlFor="lastName">Last name</Label>
-            <Input
-              id="lastName"
-              value={lastName}
-              onChange={e => onLastNameChange(e.target.value)}
-              placeholder="Smith"
-            />
-          </div>
+          <FieldGroup className="flex-1">
+            <Field>
+              <FieldLabel htmlFor="firstName">First name</FieldLabel>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={e => onFirstNameChange(e.target.value)}
+                placeholder="Jane"
+              />
+            </Field>
+          </FieldGroup>
+          <FieldGroup className="flex-1">
+            <Field>
+              <FieldLabel htmlFor="lastName">Last name</FieldLabel>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={e => onLastNameChange(e.target.value)}
+                placeholder="Smith"
+              />
+            </Field>
+          </FieldGroup>
         </div>
 
         <div className="flex flex-col gap-1.5">

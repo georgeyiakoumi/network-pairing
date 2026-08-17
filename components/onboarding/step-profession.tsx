@@ -1,6 +1,6 @@
 'use client'
 
-import { Label } from '@/components/ui/label'
+import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Badge } from '@/components/ui/badge'
 import { OnboardingStep } from './onboarding-step'
 import { ProfessionCombobox } from '@/components/profession-combobox'
@@ -15,6 +15,7 @@ interface StepProfessionProps {
   secondaryProfessionId: string
   secondaryYears: number
   showSecondary: boolean
+  action?: React.ReactNode
   onPrimaryProfessionChange: (id: string) => void
   onPrimaryYearsChange: (years: number) => void
   onSecondaryProfessionChange: (id: string) => void
@@ -29,6 +30,7 @@ export function StepProfession({
   secondaryProfessionId,
   secondaryYears,
   showSecondary,
+  action,
   onPrimaryProfessionChange,
   onPrimaryYearsChange,
   onSecondaryProfessionChange,
@@ -36,16 +38,14 @@ export function StepProfession({
   onShowSecondaryChange,
 }: StepProfessionProps) {
   return (
-    <OnboardingStep title="What do you do?">
-        <div className="flex flex-col gap-1.5">
-          <ProfessionCombobox
-            professions={professions}
-            value={primaryProfessionId}
-            onValueChange={onPrimaryProfessionChange}
-            excludeId={secondaryProfessionId}
-            excludeLabel="Secondary"
-          />
-        </div>
+    <OnboardingStep title="What do you do?" action={action}>
+        <ProfessionCombobox
+          professions={professions}
+          value={primaryProfessionId}
+          onValueChange={onPrimaryProfessionChange}
+          excludeId={secondaryProfessionId}
+          excludeLabel="Secondary"
+        />
 
         {primaryProfessionId && (
           <ExperienceSlider
@@ -67,32 +67,34 @@ export function StepProfession({
               <Badge variant="secondary" className="ml-auto text-xs">Optional</Badge>
             </button>
           ) : (
-            <div className="flex flex-col gap-1.5">
-              <div className="flex items-center justify-between">
-                <Label>Secondary profession</Label>
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                  onClick={() => {
-                    onSecondaryProfessionChange('')
-                    onSecondaryYearsChange(0)
-                    onShowSecondaryChange(false)
-                  }}
-                >
-                  Remove
-                </button>
-              </div>
-              <ProfessionCombobox
-                professions={professions}
-                value={secondaryProfessionId}
-                onValueChange={onSecondaryProfessionChange}
-                placeholder="Select profession"
-                excludeId={primaryProfessionId}
-                excludeLabel="Primary"
-                autoOpen={showSecondary && !secondaryProfessionId}
-                onDismissEmpty={() => onShowSecondaryChange(false)}
-              />
-            </div>
+            <FieldGroup>
+              <Field>
+                <div className="flex items-center justify-between">
+                  <FieldLabel>Secondary profession</FieldLabel>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                    onClick={() => {
+                      onSecondaryProfessionChange('')
+                      onSecondaryYearsChange(0)
+                      onShowSecondaryChange(false)
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+                <ProfessionCombobox
+                  professions={professions}
+                  value={secondaryProfessionId}
+                  onValueChange={onSecondaryProfessionChange}
+                  placeholder="Select profession"
+                  excludeId={primaryProfessionId}
+                  excludeLabel="Primary"
+                  autoOpen={showSecondary && !secondaryProfessionId}
+                  onDismissEmpty={() => onShowSecondaryChange(false)}
+                />
+              </Field>
+            </FieldGroup>
           )
         )}
 

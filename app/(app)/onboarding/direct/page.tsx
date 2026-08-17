@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
-import { Progress } from '@/components/ui/progress'
+import { ButtonGroup } from '@/components/ui/button-group'
+import { ArrowLeft, ArrowRight, FileCheck } from 'lucide-react'
 import { yearsToBand } from '@/components/experience-slider'
 import { StepAbout } from '@/components/onboarding/step-about'
 import { StepProfession } from '@/components/onboarding/step-profession'
@@ -129,21 +130,25 @@ export default function DirectOnboardingPage() {
     router.push('/match')
   }
 
+  const FORM_STEPS = STEPS.slice(0, -1) // exclude review
+  const dots = (
+    <div className="flex items-center gap-1.5">
+      {FORM_STEPS.map((_, i) => (
+        <div
+          key={i}
+          className={`size-1.5 rounded-full transition-colors ${i <= step ? 'bg-foreground' : 'bg-muted-foreground/30'}`}
+        />
+      ))}
+    </div>
+  )
+
   return (
     <div className="flex flex-1 flex-col items-center justify-center p-4 min-h-screen">
       <div className="w-full max-w-sm flex flex-col gap-6">
 
-        {/* progress */}
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{STEPS[step]}</span>
-            <span>{step + 1} of {STEPS.length}</span>
-          </div>
-          <Progress value={((step + 1) / STEPS.length) * 100} className="h-1.5" />
-        </div>
-
         {step === 0 && (
           <StepAbout
+            action={dots}
             firstName={firstName}
             lastName={lastName}
             graduationYear={graduationYear}
@@ -158,6 +163,7 @@ export default function DirectOnboardingPage() {
 
         {step === 1 && (
           <StepProfession
+            action={dots}
             professions={professions}
             primaryProfessionId={primaryProfessionId}
             primaryYears={primaryYears}
@@ -174,6 +180,7 @@ export default function DirectOnboardingPage() {
 
         {step === 2 && (
           <StepOffers
+            action={dots}
             offers={offers}
             professions={professions}
             selectedOffers={selectedOffers}
@@ -185,6 +192,7 @@ export default function DirectOnboardingPage() {
 
         {step === 3 && (
           <StepSeeking
+            action={dots}
             professions={professions}
             relationshipPrimary={seekingRelationshipPrimary}
             relationshipSecondary={seekingRelationshipSecondary}
@@ -226,16 +234,30 @@ export default function DirectOnboardingPage() {
         <div className="flex gap-3">
           {step > 0 && (
             <Button variant="outline" className="flex-1" onClick={() => setStep(s => s - 1)}>
+              <ArrowLeft data-icon="inline-start" />
               Back
             </Button>
           )}
           {step < STEPS.length - 1 ? (
-            <Button className="flex-1" disabled={!canAdvance()} onClick={handleContinue}>
-              {hasReachedReview ? 'Back to review' : 'Continue'}
-            </Button>
+            hasReachedReview ? (
+              <ButtonGroup className="flex-1">
+                <Button className="flex-1" disabled={!canAdvance()} onClick={() => setStep(s => s + 1)}>
+                  Continue
+                  <ArrowRight data-icon="inline-end" />
+                </Button>
+                <Button onClick={() => setStep(STEPS.length - 1)} aria-label="Back to review">
+                  <FileCheck />
+                </Button>
+              </ButtonGroup>
+            ) : (
+              <Button className="flex-1" disabled={!canAdvance()} onClick={handleContinue}>
+                Continue
+                <ArrowRight data-icon="inline-end" />
+              </Button>
+            )
           ) : (
             <Button className="flex-1" disabled={loading} onClick={handleSubmit}>
-              {loading ? 'Saving…' : 'Create my profile'}
+              {loading ? 'Saving…' : 'Create profile'}
             </Button>
           )}
         </div>

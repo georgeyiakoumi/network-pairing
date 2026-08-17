@@ -1,7 +1,6 @@
 'use client'
 
 import { Pencil } from 'lucide-react'
-import { Separator } from '@/components/ui/separator'
 import { BAND_LABELS, RELATIONSHIP_TYPES, GOALS, formatYears } from './types'
 import { yearsToBand } from '@/components/experience-slider'
 import type { Option, Profession } from './types'
@@ -72,6 +71,24 @@ function buildSeekingSummary({
   return parts.join(' ')
 }
 
+function ReviewSection({ onEdit, title, children }: { onEdit: () => void; title?: string; children: React.ReactNode }) {
+  return (
+    <div className="group flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 -mx-3 transition-colors hover:bg-muted/60">
+      <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+        {title && <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{title}</span>}
+        {children}
+      </div>
+      <button
+        type="button"
+        onClick={onEdit}
+        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground mt-0.5 shrink-0 transition-opacity"
+      >
+        <Pencil className="size-3.5" />
+      </button>
+    </div>
+  )
+}
+
 export function StepReview({
   firstName,
   lastName,
@@ -105,94 +122,56 @@ export function StepReview({
     <div className="flex flex-col">
 
       {/* identity */}
-      <div className="group/identity flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 -mx-3 transition-colors hover:bg-muted/40">
-        <div className="flex flex-col gap-0.5">
-          <h2 className="text-xl font-semibold tracking-tight">{firstName} {lastName}</h2>
-          <span className="text-sm text-muted-foreground">
-            Class of {graduationYear}
-            {locationLabel && ` · ${locationLabel}`}
-          </span>
-        </div>
-        <button
-          type="button"
-          onClick={() => onEditStep(0)}
-          className="opacity-0 group-hover/identity:opacity-100 text-muted-foreground hover:text-foreground mt-0.5 shrink-0 transition-opacity"
-        >
-          <Pencil className="size-3.5" />
-        </button>
-      </div>
+      <ReviewSection onEdit={() => onEditStep(0)}>
+        <h2 className="text-xl font-semibold tracking-tight">{firstName} {lastName}</h2>
+        <span className="text-sm text-muted-foreground">
+          Class of {graduationYear}
+          {locationLabel && ` · ${locationLabel}`}
+        </span>
+      </ReviewSection>
 
       {/* seeking summary */}
-      <div className="group/seeking flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 -mx-3 transition-colors hover:bg-muted/40">
+      <ReviewSection onEdit={() => onEditStep(3)}>
         <p className="text-sm leading-relaxed text-muted-foreground">{seekingSummary}</p>
-        <button
-          type="button"
-          onClick={() => onEditStep(3)}
-          className="opacity-0 group-hover/seeking:opacity-100 text-muted-foreground hover:text-foreground mt-0.5 shrink-0 transition-opacity"
-        >
-          <Pencil className="size-3.5" />
-        </button>
-      </div>
-
-      <Separator className="my-2" />
+      </ReviewSection>
 
       {/* profession */}
-      <div className="group/profession flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 -mx-3 transition-colors hover:bg-muted/40">
-        <div className="flex flex-col gap-1.5 flex-1">
-          <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Profession</span>
-          <ul className="flex flex-col gap-0.5">
+      <ReviewSection onEdit={() => onEditStep(1)} title="Profession">
+        <ul className="flex flex-col">
+          <li className="flex items-baseline gap-2 text-sm">
+            <span className="text-muted-foreground shrink-0">·</span>
+            <span>
+              {professions.find(p => p.id === primaryProfessionId)?.role}
+              <span className="text-muted-foreground">
+                {' · '}{formatYears(primaryYears)} ({BAND_LABELS[yearsToBand(primaryYears)]})
+              </span>
+            </span>
+          </li>
+          {secondaryProfessionId && (
             <li className="flex items-baseline gap-2 text-sm">
               <span className="text-muted-foreground shrink-0">·</span>
               <span>
-                {professions.find(p => p.id === primaryProfessionId)?.role}
+                {professions.find(p => p.id === secondaryProfessionId)?.role}
                 <span className="text-muted-foreground">
-                  {' · '}{formatYears(primaryYears)} ({BAND_LABELS[yearsToBand(primaryYears)]})
+                  {' · '}{formatYears(secondaryYears)} ({BAND_LABELS[yearsToBand(secondaryYears)]})
                 </span>
               </span>
             </li>
-            {secondaryProfessionId && (
-              <li className="flex items-baseline gap-2 text-sm">
-                <span className="text-muted-foreground shrink-0">·</span>
-                <span>
-                  {professions.find(p => p.id === secondaryProfessionId)?.role}
-                  <span className="text-muted-foreground">
-                    {' · '}{formatYears(secondaryYears)} ({BAND_LABELS[yearsToBand(secondaryYears)]})
-                  </span>
-                </span>
-              </li>
-            )}
-          </ul>
-        </div>
-        <button
-          type="button"
-          onClick={() => onEditStep(1)}
-          className="opacity-0 group-hover/profession:opacity-100 text-muted-foreground hover:text-foreground mt-0.5 shrink-0 transition-opacity"
-        >
-          <Pencil className="size-3.5" />
-        </button>
-      </div>
+          )}
+        </ul>
+      </ReviewSection>
 
       {/* skills */}
-      <div className="group/skills flex items-start justify-between gap-3 rounded-lg px-3 py-2.5 -mx-3 transition-colors hover:bg-muted/40">
-        <div className="flex flex-col gap-1.5 flex-1">
-          <span className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Skills</span>
-          <ul className="flex flex-col gap-0.5">
-            {selectedOffers.map(o => (
-              <li key={o.id} className="flex items-baseline gap-2 text-sm">
-                <span className="text-muted-foreground shrink-0">·</span>
-                <span>{o.label}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <button
-          type="button"
-          onClick={() => onEditStep(2)}
-          className="opacity-0 group-hover/skills:opacity-100 text-muted-foreground hover:text-foreground mt-0.5 shrink-0 transition-opacity"
-        >
-          <Pencil className="size-3.5" />
-        </button>
-      </div>
+      <ReviewSection onEdit={() => onEditStep(2)} title="Skills">
+        <ul className="flex flex-col">
+          {selectedOffers.map(o => (
+            <li key={o.id} className="flex items-baseline gap-2 text-sm">
+              <span className="text-muted-foreground shrink-0">·</span>
+              <span>{o.label}</span>
+            </li>
+          ))}
+        </ul>
+      </ReviewSection>
 
     </div>
   )
