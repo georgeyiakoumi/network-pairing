@@ -2,29 +2,15 @@
 
 import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
+import { BAND_LABELS, formatYears } from '@/components/onboarding/types'
 
-// Maps a year value (0–15) to a band (1–5) and display strings
+// Maps a year value (0–15) to a band (1–5)
 export function yearsToBand(years: number): number {
   if (years <= 1) return 1
   if (years <= 3) return 2
   if (years <= 5) return 3
   if (years <= 10) return 4
   return 5
-}
-
-const BAND_LABELS: Record<number, string> = {
-  1: 'Student / Graduate',
-  2: 'Early career',
-  3: 'Mid-level',
-  4: 'Senior',
-  5: 'Expert / Executive',
-}
-
-function formatYears(years: number): string {
-  if (years === 0) return '< 1 year'
-  if (years === 1) return '1 year'
-  if (years >= 15) return '15+ years'
-  return `${years} years`
 }
 
 interface ExperienceSliderProps {
