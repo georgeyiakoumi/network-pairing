@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
+import { ThemeProvider } from 'next-themes'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Project Template',
-  description: 'Built with Next.js, shadcn/ui, Tailwind CSS, and Supabase.',
+  title: 'Project',
+  description: 'Built with Next.js, shadcn/ui, and Tailwind CSS.',
 }
 
 export default function RootLayout({
@@ -14,7 +15,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
