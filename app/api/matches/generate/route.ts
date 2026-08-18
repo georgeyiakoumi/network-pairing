@@ -1,0 +1,194 @@
+/**
+ * POST /api/matches/generate
+ *
+ * Runs AI matching for the authenticated user and persists results.
+ * Returns ranked matches with score + reason.
+ *
+ * Uses runMatching() from lib/matching/run-matching.ts — same engine
+ * as the admin test page (GEO-841). Never duplicated.
+ */
+
+import { NextResponse } from 'next/server'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { runMatching } from '@/lib/matching/run-matching'
+import type { CandidateProfile, RequestingProfile } from '@/lib/matching/matching-prompt'
+
+// ─── DB row shape ─────────────────────────────────────────────────────────────
+
+type DbProfile = {
+  id: string
+  first_name: string
+  last_name: string
+  primary_experience: number
+  secondary_experience: number | null
+  seeking_relationship_primary: string
+  seeking_relationship_secondary: string[] | null
+  seeking_goal: string | null
+  professions: { category: string; role: string } | null
+  secondary_professions: { role: string } | null
+  seeking_professions: { role: string } | null
+  profile_offers: { offers: { label: string } | null }[]
+  profile_seeking_needs: { label: string }[]
+}
+
+const PROFILE_SELECT = `
+  id,
+  first_name,
+  last_name,
+  primary_experience,
+  secondary_experience,
+  seeking_relationship_primary,
+  seeking_relationship_secondary,
+  seeking_goal,
+  professions:primary_profession_id(category, role),
+  secondary_professions:secondary_profession_id(role),
+  seeking_professions:seeking_profession_id(role),
+  profile_offers(offers:offer_id(label)),
+  profile_seeking_needs(label)
+`.trim()
+
+// ─── Mappers ──────────────────────────────────────────────────────────────────
+
+function toRequestingProfile(p: DbProfile): RequestingProfile {
+  return {
+    profileId: p.id,
+    firstName: p.first_name,
+    lastName: p.last_name,
+    professionCategory: p.professions?.category ?? 'Unknown',
+    professionRole: p.professions?.role ?? 'Unknown',
+    experienceBand: p.primary_experience,
+    secondaryProfessionRole: p.secondary_professions?.role,
+    secondaryExperienceBand: p.secondary_experience ?? undefined,
+    offerLabels: p.profile_offers.map(o => o.offers?.label ?? '').filter(Boolean),
+    seekingNeedLabels: p.profile_seeking_needs.map(n => n.label),
+    seekingRelationshipPrimary: p.seeking_relationship_primary,
+    seekingRelationshipSecondary: p.seeking_relationship_secondary ?? [],
+    seekingGoal: p.seeking_goal ?? undefined,
+    seekingProfessionRole: p.seeking_professions?.role,
+  }
+}
+
+function toCandidateProfile(p: DbProfile): CandidateProfile {
+  const full = toRequestingProfile(p)
+  // seekingProfessionRole is only on RequestingProfile, not CandidateProfile
+  const candidate: CandidateProfile = {
+    profileId: full.profileId,
+    firstName: full.firstName,
+    lastName: full.lastName,
+    professionCategory: full.professionCategory,
+    professionRole: full.professionRole,
+    experienceBand: full.experienceBand,
+    secondaryProfessionRole: full.secondaryProfessionRole,
+    secondaryExperienceBand: full.secondaryExperienceBand,
+    offerLabels: full.offerLabels,
+    seekingNeedLabels: full.seekingNeedLabels,
+    seekingRelationshipPrimary: full.seekingRelationshipPrimary,
+    seekingRelationshipSecondary: full.seekingRelationshipSecondary,
+    seekingGoal: full.seekingGoal,
+  }
+  return candidate
+}
+
+// ─── Route handler ────────────────────────────────────────────────────────────
+
+export async function POST() {
+  // Auth via user-scoped anon client
+  const cookieStore = await cookies()
+  const userClient = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll: () => cookieStore.getAll(),
+        setAll: () => {},
+      },
+    }
+  )
+
+  const { data: { user } } = await userClient.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // Service-role client for reading all profiles and writing matches
+  // (matches table only allows service_role inserts per RLS)
+  const serviceClient = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        getAll: () => [],
+        setAll: () => {},
+      },
+    }
+  )
+
+  // ── Fetch requesting user's profile ──────────────────────────────────────────
+  const { data: requestingRow, error: requestingError } = await serviceClient
+    .from('profiles')
+    .select(PROFILE_SELECT)
+    .eq('user_id', user.id)
+    .single()
+
+  if (requestingError || !requestingRow) {
+    return NextResponse.json(
+      { error: 'Profile not found. Complete onboarding first.' },
+      { status: 404 }
+    )
+  }
+
+  const requesting = requestingRow as unknown as DbProfile
+  const requestingProfile = toRequestingProfile(requesting)
+
+  // ── Fetch all candidate profiles (excluding self, open_to_connect only) ──────
+  const { data: candidateRows, error: candidatesError } = await serviceClient
+    .from('profiles')
+    .select(PROFILE_SELECT)
+    .neq('user_id', user.id)
+    .eq('open_to_connect', true)
+
+  if (candidatesError) {
+    return NextResponse.json({ error: 'Failed to load candidate profiles.' }, { status: 500 })
+  }
+
+  const candidates = (candidateRows as unknown as DbProfile[]).map(toCandidateProfile)
+
+  if (candidates.length === 0) {
+    return NextResponse.json({ matches: [] })
+  }
+
+  // ── Run AI matching ───────────────────────────────────────────────────────────
+  const result = await runMatching(requestingProfile, candidates)
+
+  if (!result.success) {
+    return NextResponse.json({ error: result.error }, { status: 500 })
+  }
+
+  // ── Persist matches to DB ─────────────────────────────────────────────────────
+  // Only persist score >= 30 — weak matches aren't worth storing.
+  // Upsert on (profile_a_id, profile_b_id) so re-runs update existing rows.
+  const persistable = result.matches
+    .filter(m => m.score >= 30)
+    .map(m => ({
+      profile_a_id: requestingProfile.profileId,
+      profile_b_id: m.profileId,
+      match_score: m.score,
+      match_reason: m.reason,
+      status: 'pending',
+    }))
+
+  if (persistable.length > 0) {
+    const { error: insertError } = await serviceClient
+      .from('matches')
+      .upsert(persistable, { onConflict: 'profile_a_id,profile_b_id' })
+
+    if (insertError) {
+      // Non-fatal — log and continue. Client still gets their matches.
+      console.error('[matches/generate] Failed to persist matches:', insertError.message)
+    }
+  }
+
+  // ── Return ranked list ────────────────────────────────────────────────────────
+  return NextResponse.json({ matches: result.matches })
+}
