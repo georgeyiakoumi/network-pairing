@@ -3,7 +3,7 @@
 import { Pencil } from 'lucide-react'
 import { BAND_LABELS, RELATIONSHIP_TYPES, GOALS, formatYears } from './types'
 import { yearsToBand } from '@/components/experience-slider'
-import type { Option, Profession } from './types'
+import type { Location, Option, Profession } from './types'
 
 interface StepReviewProps {
   // identity
@@ -11,7 +11,7 @@ interface StepReviewProps {
   lastName: string
   graduationYear: string
   locationId: string
-  locations: Option[]
+  locations: Location[]
   // profession
   professions: Profession[]
   primaryProfessionId: string

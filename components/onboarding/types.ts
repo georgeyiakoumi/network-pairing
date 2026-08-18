@@ -1,5 +1,33 @@
 export type Profession = { id: string; category: string; role: string }
 export type Option = { id: string; label: string }
+export type Location = { id: string; label: string; category: string }
+
+export type ExperienceBand = 1 | 2 | 3 | 4 | 5
+
+/** The canonical output of onboarding — both intake flows must produce this exact shape. */
+export type OnboardingData = {
+  // identity
+  firstName: string
+  lastName: string
+  graduationYear: number
+  locationId: string
+
+  // profession
+  primaryProfessionId: string
+  primaryExperience: ExperienceBand
+  secondaryProfessionId: string | null
+  secondaryExperience: ExperienceBand | null
+
+  // what you offer
+  offerIds: string[]  // 1–3 valid offer IDs
+
+  // what you're looking for
+  seekingRelationshipPrimary: string
+  seekingRelationshipSecondary: string[]
+  seekingProfessionId: string | null
+  seekingSpecificNeedIds: string[]  // 1–3 valid need IDs
+  seekingGoal: string | null
+}
 
 export const STEPS = ['About you', 'Profession', 'What you offer', 'What you need', 'Review']
 
