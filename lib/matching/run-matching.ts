@@ -43,7 +43,7 @@ export async function runMatching(
   try {
     const response = await client.messages.create({
       model: 'claude-haiku-4-5',
-      max_tokens: 4096,
+      max_tokens: 16000,
       system: MATCHING_SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userMessage }],
     })
@@ -54,7 +54,7 @@ export async function runMatching(
     }
 
     // Strip markdown code fences if the model wraps output despite instructions
-    const cleaned = textBlock.text.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim()
+    const cleaned = textBlock.text.trim().replace(/^```(?:json)?\r?\n?/i, '').replace(/\r?\n?```\s*$/, '').trim()
 
     let raw: unknown
     try {
@@ -81,10 +81,52 @@ export async function runMatching(
 
       if (!validIds.has(item.profileId)) continue  // hallucinated ID — discard
 
+      // Parse breakdown if present and well-formed
+      let breakdown: MatchResult['breakdown'] = null
+      const b = (item as Record<string, unknown>).breakdown
+      if (
+        typeof b === 'object' && b !== null &&
+        typeof (b as Record<string, unknown>).summary === 'string' &&
+        Array.isArray((b as Record<string, unknown>).alignments)
+      ) {
+        const raw_b = b as Record<string, unknown>
+        const alignments = (raw_b.alignments as unknown[])
+          .filter((a): a is Record<string, unknown> =>
+            typeof a === 'object' && a !== null &&
+            typeof (a as Record<string, unknown>).yourNeed === 'string' &&
+            typeof (a as Record<string, unknown>).theirOffer === 'string' &&
+            typeof (a as Record<string, unknown>).explanation === 'string'
+          )
+          .map(a => ({
+            yourNeed: a.yourNeed as string,
+            theirOffer: a.theirOffer as string,
+            explanation: a.explanation as string,
+          }))
+        const gaps = Array.isArray(raw_b.gaps)
+          ? (raw_b.gaps as unknown[])
+              .filter((g): g is Record<string, unknown> =>
+                typeof g === 'object' && g !== null &&
+                typeof (g as Record<string, unknown>).reason === 'string' &&
+                typeof (g as Record<string, unknown>).explanation === 'string'
+              )
+              .map(g => ({
+                reason: g.reason as string,
+                explanation: g.explanation as string,
+              }))
+          : []
+
+        breakdown = {
+          summary: raw_b.summary as string,
+          alignments,
+          gaps,
+        }
+      }
+
       matches.push({
         profileId: item.profileId,
         score: Math.max(0, Math.min(100, Math.round(item.score))),
         reason: item.reason.slice(0, 200),
+        breakdown,
       })
     }
 

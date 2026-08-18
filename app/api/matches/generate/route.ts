@@ -13,6 +13,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { runMatching } from '@/lib/matching/run-matching'
 import type { CandidateProfile, RequestingProfile } from '@/lib/matching/matching-prompt'
+import { createServiceClient } from '@/lib/supabase/server'
 
 // ─── DB row shape ─────────────────────────────────────────────────────────────
 
@@ -113,16 +114,7 @@ export async function POST() {
 
   // Service-role client for reading all profiles and writing matches
   // (matches table only allows service_role inserts per RLS)
-  const serviceClient = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        getAll: () => [],
-        setAll: () => {},
-      },
-    }
-  )
+  const serviceClient = createServiceClient()
 
   // ── Fetch requesting user's profile ──────────────────────────────────────────
   const { data: requestingRow, error: requestingError } = await serviceClient
@@ -168,24 +160,54 @@ export async function POST() {
   // ── Persist matches to DB ─────────────────────────────────────────────────────
   // Only persist score >= 30 — weak matches aren't worth storing.
   // Upsert on (profile_a_id, profile_b_id) so re-runs update existing rows.
-  const persistable = result.matches
-    .filter(m => m.score >= 30)
-    .map(m => ({
-      profile_a_id: requestingProfile.profileId,
-      profile_b_id: m.profileId,
-      match_score: m.score,
-      match_reason: m.reason,
-      status: 'pending',
-    }))
+  const scoringRows = result.matches.filter(m => m.score >= 30)
 
-  if (persistable.length > 0) {
-    const { error: insertError } = await serviceClient
+  if (scoringRows.length > 0) {
+    // Two-step persist: update existing rows (score/reason/breakdown only, preserve status),
+    // then insert genuinely new rows with status 'pending'.
+    const profileBIds = scoringRows.map(m => m.profileId)
+
+    const { data: existingRows } = await serviceClient
       .from('matches')
-      .upsert(persistable, { onConflict: 'profile_a_id,profile_b_id' })
+      .select('id, profile_b_id')
+      .eq('profile_a_id', requestingProfile.profileId)
+      .in('profile_b_id', profileBIds)
 
-    if (insertError) {
-      // Non-fatal — log and continue. Client still gets their matches.
-      console.error('[matches/generate] Failed to persist matches:', insertError.message)
+    const existingIds = new Set((existingRows ?? []).map(r => r.profile_b_id))
+
+    // Update existing rows — never touch status
+    const toUpdate = scoringRows.filter(m => existingIds.has(m.profileId))
+    await Promise.all(
+      toUpdate.map(m =>
+        serviceClient
+          .from('matches')
+          .update({
+            match_score: m.score,
+            match_reason: m.reason,
+            match_breakdown: m.breakdown ?? null,
+          })
+          .eq('profile_a_id', requestingProfile.profileId)
+          .eq('profile_b_id', m.profileId)
+      )
+    )
+
+    // Insert new rows with status 'pending'
+    const toInsert = scoringRows
+      .filter(m => !existingIds.has(m.profileId))
+      .map(m => ({
+        profile_a_id: requestingProfile.profileId,
+        profile_b_id: m.profileId,
+        match_score: m.score,
+        match_reason: m.reason,
+        match_breakdown: m.breakdown ?? null,
+        status: 'pending',
+      }))
+
+    if (toInsert.length > 0) {
+      const { error: insertError } = await serviceClient.from('matches').insert(toInsert)
+      if (insertError) {
+        console.error('[matches/generate] Failed to insert new matches:', insertError.message)
+      }
     }
   }
 

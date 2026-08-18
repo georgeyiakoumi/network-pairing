@@ -44,7 +44,23 @@ The array must:
   {
     "profileId": "<uuid from candidates list>",
     "score": <integer 0–100>,
-    "reason": "<one sentence, max 20 words, explaining the match from the user's perspective>"
+    "reason": "<one sentence, max 20 words, summarising the match from the user's perspective>",
+    "breakdown": {
+      "summary": "<2–3 sentences explaining why this is a good match, written to the requesting user as 'you'>",
+      "alignments": [
+        {
+          "yourNeed": "<what the requesting user is looking for, e.g. 'Mentorship'>",
+          "theirOffer": "<what the candidate offers that meets this need, e.g. 'Mentorship'>",
+          "explanation": "<1–2 sentences specific to this pairing, e.g. 'Bongani has 10+ years in cybersecurity and has explicitly offered mentorship to early-career alumni.'>"
+        }
+      ],
+      "gaps": [
+        {
+          "reason": "<short label for the gap, e.g. 'Industry mismatch' or 'Experience gap'>",
+          "explanation": "<1 sentence explaining what didn't align and why it held the score back>"
+        }
+      ]
+    }
   }
 ]
 
@@ -56,6 +72,9 @@ The array must:
 - Score 20–49: weak match, some overlap
 - Score 0–19: poor match
 - Reason must be specific to this pairing, not generic. Bad: "Great match." Good: "Senior FinTech founder who can invest and open doors in the African startup ecosystem."
+- breakdown.alignments: include only meaningful need↔offer pairs (1–4 items). Do not pad with weak or generic alignments.
+- breakdown.summary: address the requesting user directly as "you". Be specific — reference their profession, needs, and the candidate's actual offers.
+- breakdown.gaps: identify 1–3 genuine reasons the score isn't higher. Only include real mismatches — industry divergence, experience band mismatch, unmet needs, missing offer overlap. Do not invent gaps. If the score is 90+, gaps may be empty []. Do not explain the absence of perfection for trivially minor reasons.
 - Maximum 30 candidates per call. If more are passed, only rank the first 30.`
 
 export type CandidateProfile = {
@@ -78,10 +97,28 @@ export type RequestingProfile = CandidateProfile & {
   seekingProfessionRole?: string  // populated if seekingProfessionId is set
 }
 
+export type MatchAlignment = {
+  yourNeed: string
+  theirOffer: string
+  explanation: string
+}
+
+export type MatchGap = {
+  reason: string
+  explanation: string
+}
+
+export type MatchBreakdown = {
+  summary: string
+  alignments: MatchAlignment[]
+  gaps: MatchGap[]
+}
+
 export type MatchResult = {
   profileId: string
   score: number
   reason: string
+  breakdown: MatchBreakdown | null
 }
 
 export function buildMatchingUserMessage(
