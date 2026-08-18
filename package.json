@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "seed": "npx tsx scripts/seed.ts",
+    "test:matching": "npx tsx scripts/test-matching.ts",
     "swap-icons": "bash scripts/swap-icons.sh",
     "test": "vitest",
     "test:ui": "vitest --ui",
