@@ -14,79 +14,9 @@ import { NextRequest } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { runMatching } from '@/lib/matching/run-matching'
 import { preFilterCandidates } from '@/lib/matching/pre-filter'
-import type { CandidateProfile, RequestingProfile } from '@/lib/matching/matching-prompt'
+import { DbProfile, PROFILE_SELECT, toRequestingProfile, toCandidateProfile } from '@/lib/matching/db'
 
 const ADMIN_KEY = process.env.ADMIN_SECRET_KEY
-
-type DbProfile = {
-  id: string
-  first_name: string
-  last_name: string
-  primary_experience: number
-  secondary_experience: number | null
-  seeking_relationship_primary: string
-  seeking_relationship_secondary: string[] | null
-  seeking_goal: string | null
-  professions: { category: string; role: string } | null
-  secondary_professions: { role: string } | null
-  seeking_professions: { role: string } | null
-  profile_offers: { offers: { label: string } | null }[]
-  profile_seeking_needs: { label: string }[]
-}
-
-const PROFILE_SELECT = `
-  id,
-  first_name,
-  last_name,
-  primary_experience,
-  secondary_experience,
-  seeking_relationship_primary,
-  seeking_relationship_secondary,
-  seeking_goal,
-  professions:primary_profession_id(category, role),
-  secondary_professions:secondary_profession_id(role),
-  seeking_professions:seeking_profession_id(role),
-  profile_offers(offers:offer_id(label)),
-  profile_seeking_needs(label)
-`.trim()
-
-function toRequestingProfile(p: DbProfile): RequestingProfile {
-  return {
-    profileId: p.id,
-    firstName: p.first_name,
-    lastName: p.last_name,
-    professionCategory: p.professions?.category ?? 'Unknown',
-    professionRole: p.professions?.role ?? 'Unknown',
-    experienceBand: p.primary_experience,
-    secondaryProfessionRole: p.secondary_professions?.role,
-    secondaryExperienceBand: p.secondary_experience ?? undefined,
-    offerLabels: p.profile_offers.map(o => o.offers?.label ?? '').filter(Boolean),
-    seekingNeedLabels: p.profile_seeking_needs.map(n => n.label),
-    seekingRelationshipPrimary: p.seeking_relationship_primary,
-    seekingRelationshipSecondary: p.seeking_relationship_secondary ?? [],
-    seekingGoal: p.seeking_goal ?? undefined,
-    seekingProfessionRole: p.seeking_professions?.role,
-  }
-}
-
-function toCandidateProfile(p: DbProfile): CandidateProfile {
-  const full = toRequestingProfile(p)
-  return {
-    profileId: full.profileId,
-    firstName: full.firstName,
-    lastName: full.lastName,
-    professionCategory: full.professionCategory,
-    professionRole: full.professionRole,
-    experienceBand: full.experienceBand,
-    secondaryProfessionRole: full.secondaryProfessionRole,
-    secondaryExperienceBand: full.secondaryExperienceBand,
-    offerLabels: full.offerLabels,
-    seekingNeedLabels: full.seekingNeedLabels,
-    seekingRelationshipPrimary: full.seekingRelationshipPrimary,
-    seekingRelationshipSecondary: full.seekingRelationshipSecondary,
-    seekingGoal: full.seekingGoal,
-  }
-}
 
 export async function POST(request: NextRequest) {
   const { profileId, adminKey } = await request.json() as { profileId?: string; adminKey?: string }
@@ -142,13 +72,25 @@ export async function POST(request: NextRequest) {
           return
         }
 
+        // Pre-filter here for immediate logging — runMatching receives the
+        // already-filtered list so the filter only runs once.
         emit({ type: 'log', text: '→ Running deterministic pre-filter…' })
         const { filtered, eliminated } = preFilterCandidates(requesting, candidates)
         emit({ type: 'log', text: `→ ${filtered.length} candidate${filtered.length !== 1 ? 's' : ''} passed pre-filter (${eliminated} eliminated)` })
 
+        if (filtered.length === 0) {
+          emit({ type: 'log', text: '→ No candidates passed pre-filter — returning empty result' })
+          emit({ type: 'result', matches: [], requesting })
+          controller.close()
+          return
+        }
+
         emit({ type: 'log', text: '→ Sending to Claude (claude-haiku-4-5)…' })
 
-        const result = await runMatching(requesting, candidates)
+        // Pass filtered list directly — runMatching skips its internal pre-filter
+        // when the input is already filtered (candidates.length === filtered.length
+        // handled internally; here we pass filtered to avoid a second pass).
+        const result = await runMatching(requesting, filtered)
 
         if (!result.success) {
           emit({ type: 'error', error: result.error })

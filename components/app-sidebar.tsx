@@ -7,21 +7,29 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
 } from '@/components/ui/sidebar'
-import { Heart, Users, Network } from 'lucide-react'
+import { Heart, Users, Network, LayoutDashboard, FlaskConical } from 'lucide-react'
 
 const NAV_ITEMS = [
   { label: 'Match', href: '/match', icon: Heart },
   { label: 'Connections', href: '/connections', icon: Users },
 ]
 
-export function AppSidebar() {
+export function AppSidebar({ adminKey }: { adminKey?: string }) {
   const pathname = usePathname()
+
+  const adminItems = adminKey
+    ? [
+        { label: 'Dashboard', href: `/admin?key=${adminKey}`, icon: LayoutDashboard },
+        { label: 'Match tester', href: `/admin/test-match?key=${adminKey}`, icon: FlaskConical },
+      ]
+    : []
 
   return (
     <Sidebar collapsible="icon">
@@ -54,6 +62,29 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {adminItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Admin</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map(({ label, href, icon: Icon }) => (
+                  <SidebarMenuItem key={href}>
+                    <SidebarMenuButton
+                      isActive={pathname === href.split('?')[0]}
+                      tooltip={label}
+                      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                      render={<Link href={href as any} />}
+                    >
+                      <Icon aria-hidden="true" />
+                      <span>{label}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter />

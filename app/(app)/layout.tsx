@@ -10,9 +10,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   if (!user) redirect('/login')
 
+  const adminKey = process.env.ADMIN_SECRET_KEY
+
   return (
     <SidebarProvider>
-      <AppSidebar />
+      <AppSidebar adminKey={adminKey} />
       <SidebarInset>
         <header className="flex h-12 items-center gap-2 border-b border-border px-4">
           <SidebarTrigger className="-ml-1" />

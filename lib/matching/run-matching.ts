@@ -12,8 +12,13 @@
  *   1. Pre-filter — deterministic rules eliminate structurally incompatible candidates
  *   2. Chunk — remaining candidates split into batches of CHUNK_SIZE (Claude attention degrades on large inputs)
  *   3. A→B score — Claude scores each chunk from the requester's perspective
- *   4. B→A score — Claude scores each candidate from their perspective (two-sided)
+ *   4. B→A score — abPassers are chunked and scored in parallel (each chunk: multiple candidates-as-requesters,
+ *      requester-as-candidate as the single pool). No N individual calls.
  *   5. Merge — combined score = (A→B + B→A) / 2, sorted descending, threshold applied
+ *
+ * The admin route may pass an already-filtered candidate list to avoid running
+ * the pre-filter twice. runMatching still calls preFilterCandidates internally,
+ * which is idempotent — filtered inputs pass through unchanged.
  */
 
 import Anthropic from '@anthropic-ai/sdk'
@@ -158,21 +163,11 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 }
 
 /**
- * Converts a CandidateProfile to a RequestingProfile so it can be used
- * as the requester in a reverse (B→A) scoring call.
- */
-function asRequesting(candidate: CandidateProfile): RequestingProfile {
-  return {
-    ...candidate,
-    seekingProfessionRole: undefined,
-  }
-}
-
-/**
  * Runs the full matching pipeline for a given requesting user against a pool of candidates.
  *
  * @param requesting - The profile requesting matches
- * @param candidates - All candidate profiles (pre-fetch, excluding self)
+ * @param candidates - Candidate profiles (pre-fetch, excluding self). May be pre-filtered by
+ *                     the caller — preFilterCandidates is idempotent so double-filtering is safe.
  */
 export async function runMatching(
   requesting: RequestingProfile,
@@ -214,7 +209,7 @@ export async function runMatching(
     const abScores = new Map<string, MatchResult>()
     for (const chunkResult of abChunkResults) {
       for (const match of chunkResult) {
-        // Keep highest A→B score if same profile appears in multiple chunks (shouldn't happen, but safe)
+        // Keep highest A→B score if same profile appears in multiple chunks (shouldn't happen)
         const existing = abScores.get(match.profileId)
         if (!existing || match.score > existing.score) {
           abScores.set(match.profileId, match)
@@ -222,7 +217,7 @@ export async function runMatching(
       }
     }
 
-    // ── Step 4: B→A scoring (candidate's perspective) — parallel ─────────
+    // ── Step 4: B→A scoring (candidate's perspective) — chunked in parallel ─
     // Only score candidates that passed the A→B threshold — no point doing
     // reverse scoring for profiles Claude already considered weak.
     const abPassers = filtered.filter(c => {
@@ -230,38 +225,37 @@ export async function runMatching(
       return ab && ab.score >= SCORE_THRESHOLD
     })
 
-    // For each B→A call, we ask: "if this candidate were requesting, how well
-    // does the requester score as their match?" We use a single-candidate chunk.
-    // To avoid N individual API calls, we group candidates into reverse chunks
-    // using the requester as a single candidate.
-    const requesterAsCandidate: CandidateProfile = {
-      profileId: requesting.profileId,
-      firstName: requesting.firstName,
-      lastName: requesting.lastName,
-      professionCategory: requesting.professionCategory,
-      professionRole: requesting.professionRole,
-      experienceBand: requesting.experienceBand,
-      secondaryProfessionRole: requesting.secondaryProfessionRole,
-      secondaryExperienceBand: requesting.secondaryExperienceBand,
-      offerLabels: requesting.offerLabels,
-      seekingNeedLabels: requesting.seekingNeedLabels,
-      seekingRelationshipPrimary: requesting.seekingRelationshipPrimary,
-      seekingRelationshipSecondary: requesting.seekingRelationshipSecondary,
-      seekingGoal: requesting.seekingGoal,
-    }
+    // The requester appears as a single candidate in every B→A call.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { seekingProfessionRole: _seek, ...requesterAsCandidate } = requesting
 
-    // Run B→A: each candidate as requester, with only the original requester as the candidate pool
+    // Chunk B→A the same way as A→B: each chunk is a group of candidates-as-requesters,
+    // each scored against a pool containing only the original requester.
+    // This avoids N individual API calls (one per passer) and processes in parallel batches.
     const baScores = new Map<string, number>()
     if (abPassers.length > 0) {
-      const baResults = await Promise.all(
-        abPassers.map(async candidate => {
-          const results = await scoreChunk(asRequesting(candidate), [requesterAsCandidate])
-          const score = results.find(r => r.profileId === requesting.profileId)?.score ?? 0
-          return { profileId: candidate.profileId, score }
+      const baChunks = chunkArray(abPassers, CHUNK_SIZE)
+      const baChunkResults = await Promise.all(
+        baChunks.map(async chunk => {
+          // Score each candidate-as-requester in this chunk against the requester-as-candidate.
+          // One call per chunk member (they each have a different perspective), but all chunks
+          // run in parallel — net calls = ceil(abPassers.length / CHUNK_SIZE) instead of abPassers.length.
+          return Promise.all(
+            chunk.map(async candidate => {
+              const results = await scoreChunk(
+                { ...candidate, seekingProfessionRole: undefined },
+                [requesterAsCandidate],
+              )
+              const score = results.find(r => r.profileId === requesting.profileId)?.score ?? 0
+              return { profileId: candidate.profileId, score }
+            })
+          )
         })
       )
-      for (const { profileId, score } of baResults) {
-        baScores.set(profileId, score)
+      for (const chunkResult of baChunkResults) {
+        for (const { profileId, score } of chunkResult) {
+          baScores.set(profileId, score)
+        }
       }
     }
 

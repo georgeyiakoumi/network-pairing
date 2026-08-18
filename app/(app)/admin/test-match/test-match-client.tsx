@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -166,13 +166,12 @@ export function TestMatchClient({
   adminKey: string | undefined
 }) {
   const [selectedId, setSelectedId] = useState<string>('')
-  const [selectedLabel, setSelectedLabel] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [logLines, setLogLines] = useState<string[]>([])
   const [matches, setMatches] = useState<MatchResult[] | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const profileMap = new Map(profiles.map(p => [p.id, p]))
+  const profileMap = useMemo(() => new Map(profiles.map(p => [p.id, p])), [profiles])
 
   const selectedProfile = selectedId ? profileMap.get(selectedId) : null
 
@@ -262,23 +261,22 @@ export function TestMatchClient({
                   Select a profile
                 </label>
                 <Select
-                  value={selectedLabel}
-                  onValueChange={(v) => {
-                    const label = v ?? ''
-                    const profile = profiles.find(p => makeLabel(p) === label)
-                    setSelectedLabel(label)
-                    setSelectedId(profile?.id ?? '')
+                  value={selectedId}
+                  onValueChange={(id) => {
+                    setSelectedId(id ?? '')
                     setMatches(null)
                     setError(null)
                     setLogLines([])
                   }}
                 >
                   <SelectTrigger id="profile-select" className="w-full">
-                    <SelectValue placeholder="Choose a profile to test…" />
+                    <SelectValue placeholder="Choose a profile to test…">
+                      {selectedProfile ? makeLabel(selectedProfile) : undefined}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {profiles.map(p => (
-                      <SelectItem key={p.id} value={makeLabel(p)}>
+                      <SelectItem key={p.id} value={p.id}>
                         {makeLabel(p)}
                       </SelectItem>
                     ))}
