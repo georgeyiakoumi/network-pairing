@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "seed": "npx tsx scripts/seed.ts",
     "swap-icons": "bash scripts/swap-icons.sh",
     "test": "vitest",
     "test:ui": "vitest --ui",
