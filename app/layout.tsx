@@ -1,9 +1,15 @@
 import type { Metadata } from 'next'
+import { ThemeProvider } from 'next-themes'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: 'Project Template',
-  description: 'Built with Next.js, shadcn/ui, Tailwind CSS, and Supabase.',
+  title: 'Project',
+  description: 'Built with Next.js, shadcn/ui, and Tailwind CSS.',
 }
 
 export default function RootLayout({
@@ -12,9 +18,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={cn("font-sans", geist.variable)}>
       <body className="min-h-screen bg-background font-sans antialiased">
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          {children}
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   )

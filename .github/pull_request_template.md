@@ -1,33 +1,29 @@
 ## What changed
 
-<!-- 2–4 sentences, plain English. What does this PR do to the template? -->
+<!-- 2–4 sentences, plain English. What does this PR do? -->
 
 ## Why
 
-<!-- The problem, lesson, or gap this addresses. -->
+<!-- The user need or bug this addresses. -->
 
 ## Linear ticket
 
 <!-- Link: https://linear.app/george-yiakoumi/issue/GEO-XX -->
 
-## Type of change
+## Regression checklist
 
-<!-- Tick all that apply -->
+<!-- If this PR touches a user-facing flow, complete this before merging. -->
+<!-- Remove if not applicable (e.g. config-only PRs). -->
 
-- [ ] PATCH — bug fix, typo, doc correction (no behaviour change)
-- [ ] MINOR — new feature, new add-on option, new rule or doc section
-- [ ] MAJOR — breaking change, changed default, removed option (requires migration note)
-
-## Checklist
-
-- [ ] `bash -n create-project.sh` passes
-- [ ] `bash -n .scripts/scaffold.sh` passes
-- [ ] `bash -n .scripts/install.sh` passes
-- [ ] `bash -n .scripts/output.sh` passes
-- [ ] `sync-template.sh` `SYNC_FILES` updated if new files were added to `.claude/`
-- [ ] `CHANGELOG.md` updated with this version's entry (Added / Changed / Fixed / Removed)
-- [ ] Migration note added to CHANGELOG if existing projects are affected
+- [ ] Manually walked through the affected flow in a fresh browser tab
+- [ ] Checked both light and dark mode
+- [ ] Checked mobile viewport
+- [ ] No console errors
+- [ ] `npm run typecheck` passes
+- [ ] `npm run lint` passes
+- [ ] `npm run build` exits 0
 
 ## Intentional trade-offs
 
-<!-- Anything that looks like an issue but is a deliberate decision. -->
+<!-- Anything flagged by /improve that was a deliberate decision. -->
+<!-- Cross-reference CONTEXT.md and the Notion decisions log. -->
