@@ -51,6 +51,22 @@ Anthropic key: **console.anthropic.com**.
 
 ---
 
+## Pages
+
+| Page | URL | Notes |
+|---|---|---|
+| Sign up | `/signup` | Create a new alumni account |
+| Sign in | `/login` | Log in to an existing account |
+| Onboarding | `/onboarding` | Profile setup — guided or direct |
+| Match feed | `/match` | Swipe-style match UI (requires a complete profile) |
+| Connections | `/connections` | Accepted matches |
+| Admin dashboard | `/admin?key=YOUR_ADMIN_SECRET_KEY` | Requires `ADMIN_SECRET_KEY` from `.env.local` |
+| Match tester | `/admin/test-match?key=YOUR_ADMIN_SECRET_KEY` | Run the AI matching engine against any profile — results not persisted |
+
+The admin key is set via `ADMIN_SECRET_KEY` in `.env.local`. Anyone without the correct key gets a 404.
+
+---
+
 ## Repo structure
 
 ```
