@@ -64,7 +64,7 @@ export function AppSidebar({ adminKey }: { adminKey?: string }) {
         </SidebarGroup>
 
         {adminItems.length > 0 && (
-          <SidebarGroup>
+          <SidebarGroup className="hidden md:flex">
             <SidebarGroupLabel>Admin</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>

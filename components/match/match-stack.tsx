@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { X, Heart, CheckCircle } from 'lucide-react'
 import { BAND_LABELS } from '@/components/onboarding/types'
+import { SwipeableCard } from '@/components/match/swipeable-card'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -260,12 +261,18 @@ export function MatchStack({ initialCards }: { initialCards: MatchCard[] }) {
       <p className="text-xs text-muted-foreground self-end">
         {currentIndex + 1} of {cards.length}
       </p>
-      <MatchCardView
-        card={current}
-        onConnect={handleConnect}
-        onPass={handlePass}
-        connecting={connecting}
-      />
+      <SwipeableCard
+        onSwipeLeft={handlePass}
+        onSwipeRight={handleConnect}
+        disabled={connecting}
+      >
+        <MatchCardView
+          card={current}
+          onConnect={handleConnect}
+          onPass={handlePass}
+          connecting={connecting}
+        />
+      </SwipeableCard>
     </div>
   )
 }

@@ -33,3 +33,6 @@ next-env.d.ts
 # Installed skills (local, not committed)
 .agents/
 .claude/skills/
+
+# Local Netlify folder
+.netlify
