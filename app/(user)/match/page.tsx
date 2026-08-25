@@ -3,18 +3,6 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { MatchStack, type MatchCard } from '@/components/match/match-stack'
 
-import type { MatchBreakdown } from '@/lib/matching/matching-prompt'
-
-type GenerateResponse = {
-  matches: {
-    profileId: string
-    score: number
-    reason: string
-    breakdown?: MatchBreakdown | null
-  }[]
-  error?: string
-}
-
 type DbMatch = {
   id: string
   profile_b_id: string
@@ -48,44 +36,35 @@ export default async function MatchPage() {
 
   if (!profile) redirect('/onboarding')
 
-  // ── Run matching (calls Claude, persists to matches table) ────────────────
-  // We hit our own API route server-side by constructing an absolute URL.
-  // NEXT_PUBLIC_SITE_URL is set automatically by Netlify in production.
-  // NEXT_PUBLIC_APP_URL can be set manually to override.
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    'http://localhost:3000'
-  const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
-
-  const generateRes = await fetch(`${baseUrl}/api/matches/generate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: cookieHeader,
-    },
-    cache: 'no-store',
-  })
-
-  const generateData: GenerateResponse = await generateRes.json()
-
-  // ── If matching failed or returned no matches, show empty state ───────────
-  if (!generateRes.ok || !generateData.matches?.length) {
-    return (
-      <main className="flex flex-1 flex-col items-center justify-center min-h-screen p-4">
-        <MatchStack initialCards={[]} />
-      </main>
-    )
-  }
-
-  // ── Fetch persisted match rows to get match IDs ───────────────────────────
-  // We need the match table IDs for the connect API call.
+  // ── Service-role client for reading matches ──────────────────────────────
   const serviceSupabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { cookies: { getAll: () => [], setAll: () => {} } }
   )
 
+  // ── Run matching in background (non-blocking) ──────────────────────────────
+  // Generates new matches if needed, but we don't wait for it to finish
+  // before loading the page. Existing pending matches are shown immediately.
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    'http://localhost:3000'
+  const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+
+  // Fire and forget — don't block page load
+  fetch(`${baseUrl}/api/matches/generate`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: cookieHeader,
+    },
+    cache: 'no-store',
+  }).catch(() => {
+    // Silently ignore — existing matches will still show
+  })
+
+  // ── Load existing pending matches from DB ──────────────────────────────────
   const { data: matchRows } = await serviceSupabase
     .from('matches')
     .select(`
@@ -108,7 +87,7 @@ export default async function MatchPage() {
 
   if (!matchRows?.length) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center min-h-screen p-4">
+      <main className="flex flex-1 flex-col items-center p-4 overflow-y-auto">
         <MatchStack initialCards={[]} />
       </main>
     )
@@ -134,7 +113,7 @@ export default async function MatchPage() {
   })
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center min-h-screen p-4">
+    <main className="flex flex-1 flex-col items-center p-4 overflow-y-auto">
       <MatchStack initialCards={cards} />
     </main>
   )

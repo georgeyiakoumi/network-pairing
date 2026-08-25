@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardAction, CardContent, 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerFooter } from '@/components/ui/drawer'
 import { Mail } from 'lucide-react'
 import { BAND_LABELS } from '@/components/onboarding/types'
 import type { MatchBreakdown } from '@/lib/matching/matching-prompt'
@@ -43,52 +43,55 @@ export function ConnectionCard({
   return (
     <>
     {hasBreakdownContent && (
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>We scored this {matchScore}% because…</DialogTitle>
-          </DialogHeader>
-          {matchBreakdown ? (
-            <div className="flex flex-col gap-5">
-              <p className="text-sm text-muted-foreground leading-relaxed">{matchBreakdown.summary}</p>
+      <Drawer open={open} onOpenChange={setOpen}>
+        <DrawerContent>
+          <div className="mx-auto w-full max-w-lg">
+            <DrawerHeader>
+              <DrawerTitle className="text-xl">We scored this {matchScore}% because…</DrawerTitle>
+            </DrawerHeader>
+            <div className="overflow-y-auto max-h-[70vh] p-6">
+              {matchBreakdown ? (
+                <div className="flex flex-col gap-5">
 
-              {matchBreakdown.alignments.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  {matchBreakdown.alignments.map((a, i) => (
-                    <div key={i} className="flex flex-col gap-2 rounded-lg border border-border p-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">You</span>
-                          <span className="text-sm font-medium">{a.yourNeed}</span>
+                  {matchBreakdown.alignments.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      {matchBreakdown.alignments.map((a, i) => (
+                        <div key={i} className="flex flex-col gap-2 rounded-lg border border-border p-3">
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">You want</span>
+                              <span className="text-sm font-medium">{a.yourNeed}</span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{firstName} has</span>
+                              <span className="text-sm font-medium">{a.theirOffer}</span>
+                            </div>
+                          </div>
+                          <p className="text-base text-muted-foreground leading-relaxed border-t border-border pt-2">{a.explanation}</p>
                         </div>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{firstName}</span>
-                          <span className="text-sm font-medium">{a.theirOffer}</span>
-                        </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground leading-relaxed border-t border-border pt-2">{a.explanation}</p>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
 
-              {matchBreakdown.gaps.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">What held it back</p>
-                  {matchBreakdown.gaps.map((g, i) => (
-                    <div key={i} className="flex flex-col gap-1 rounded-lg border border-border bg-muted/40 p-3">
-                      <span className="text-sm font-medium">{g.reason}</span>
-                      <p className="text-xs text-muted-foreground leading-relaxed">{g.explanation}</p>
+                  {matchBreakdown.gaps.length > 0 && (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">What held it back</p>
+                      {matchBreakdown.gaps.map((g, i) => (
+                        <div key={i} className="flex flex-col gap-1 rounded-lg border border-border bg-muted/40 p-3">
+                          <span className="text-sm font-medium">{g.reason}</span>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{g.explanation}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
                 </div>
-              )}
+              ) : matchReason ? (
+                <p className="text-sm text-muted-foreground leading-relaxed">{matchReason}</p>
+              ) : null}
             </div>
-          ) : matchReason ? (
-            <p className="text-sm text-muted-foreground leading-relaxed">{matchReason}</p>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+          </div>
+        </DrawerContent>
+      </Drawer>
     )}
     <Card>
       <CardHeader>

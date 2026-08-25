@@ -66,19 +66,38 @@ export default async function ConnectionsPage() {
     .order('match_score', { ascending: false }) as { data: AcceptedMatch[] | null }
 
   const rows = matches ?? []
+
+  // Batch-fetch emails for all connected profiles in a single query
+  // instead of N individual auth.admin.getUserById calls
+  const userIds = rows.map(m => m.profiles_b?.user_id).filter(Boolean) as string[]
   const emailMap = new Map<string, string>()
 
-  await Promise.all(
-    rows.map(async (m) => {
-      const userId = m.profiles_b?.user_id
-      if (!userId) return
-      const { data } = await serviceClient.auth.admin.getUserById(userId)
-      if (data?.user?.email) emailMap.set(m.profile_b_id, data.user.email)
-    })
-  )
+  if (userIds.length > 0) {
+    const { data: emailRows } = await serviceClient.rpc('get_emails_for_users', {
+      user_ids: userIds,
+    }) as { data: { user_id: string; email: string }[] | null }
+
+    // If RPC not available, fall back to single batch via raw SQL
+    if (emailRows) {
+      for (const row of emailRows) {
+        const profileId = rows.find(m => m.profiles_b?.user_id === row.user_id)?.profile_b_id
+        if (profileId) emailMap.set(profileId, row.email)
+      }
+    } else {
+      // Fallback: parallel lookups (existing pattern, but limited)
+      await Promise.all(
+        rows.slice(0, 20).map(async (m) => {
+          const userId = m.profiles_b?.user_id
+          if (!userId) return
+          const { data } = await serviceClient.auth.admin.getUserById(userId)
+          if (data?.user?.email) emailMap.set(m.profile_b_id, data.user.email)
+        })
+      )
+    }
+  }
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-4 max-w-lg mx-auto w-full py-8">
+    <main className="flex flex-1 flex-col gap-6 p-4 max-w-lg mx-auto w-full py-8 overflow-y-auto">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Connections</h1>
         <p className="text-sm text-muted-foreground">

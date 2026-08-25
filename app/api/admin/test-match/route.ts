@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         // Pass filtered list directly — runMatching skips its internal pre-filter
         // when the input is already filtered (candidates.length === filtered.length
         // handled internally; here we pass filtered to avoid a second pass).
-        const result = await runMatching(requesting, filtered)
+        const result = await runMatching(requesting, filtered, { perspective: 'third-person' })
 
         if (!result.success) {
           emit({ type: 'error', error: result.error })
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
         emit({ type: 'log', text: `→ ${stats.aboveThreshold} match${stats.aboveThreshold !== 1 ? 'es' : ''} above threshold (≥40%)` })
         emit({ type: 'log', text: `→ Top score: ${result.matches[0]?.score ?? 'n/a'}%` })
         emit({ type: 'log', text: '→ Done.' })
-        emit({ type: 'result', matches: result.matches, requesting })
+        emit({ type: 'result', matches: result.matches, requesting, stats })
       } catch (err) {
         emit({ type: 'error', error: err instanceof Error ? err.message : 'Unknown error' })
       } finally {

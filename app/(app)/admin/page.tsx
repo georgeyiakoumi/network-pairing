@@ -15,8 +15,14 @@ export default async function AdminPage({
 }: {
   searchParams: Promise<{ key?: string }>
 }) {
+  // Support both cookie (secure) and query param (legacy/first-access)
   const { key } = await searchParams
-  if (!ADMIN_KEY || key !== ADMIN_KEY) notFound()
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  const cookieKey = cookieStore.get('admin_key')?.value
+  const adminKey = cookieKey || key
+
+  if (!ADMIN_KEY || adminKey !== ADMIN_KEY) notFound()
 
   const db = createServiceClient()
 
@@ -92,7 +98,7 @@ export default async function AdminPage({
   const topNeeds = Object.entries(needCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
 
   return (
-    <div className="flex flex-col gap-8 p-6 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-8 p-6 w-full overflow-y-auto flex-1">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Admin dashboard</h1>
         <p className="text-sm text-muted-foreground">Platform-level match quality and engagement stats.</p>

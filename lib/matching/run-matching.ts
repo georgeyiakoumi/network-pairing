@@ -55,8 +55,9 @@ const client = new Anthropic()
 async function scoreChunk(
   requesting: RequestingProfile,
   chunk: CandidateProfile[],
+  options?: { perspective?: 'second-person' | 'third-person' },
 ): Promise<MatchResult[]> {
-  const userMessage = buildMatchingUserMessage(requesting, chunk)
+  const userMessage = buildMatchingUserMessage(requesting, chunk, options)
 
   const response = await client.messages.create({
     model: 'claude-haiku-4-5',
@@ -172,6 +173,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 export async function runMatching(
   requesting: RequestingProfile,
   candidates: CandidateProfile[],
+  options?: { perspective?: 'second-person' | 'third-person' },
 ): Promise<RunMatchingResult> {
   if (candidates.length === 0) {
     return {
@@ -204,7 +206,7 @@ export async function runMatching(
   try {
     // ── Step 3: A→B scoring (requester's perspective) — chunks in parallel ──
     const abChunkResults = await Promise.all(
-      chunks.map(chunk => scoreChunk(requesting, chunk))
+      chunks.map(chunk => scoreChunk(requesting, chunk, options))
     )
     const abScores = new Map<string, MatchResult>()
     for (const chunkResult of abChunkResults) {

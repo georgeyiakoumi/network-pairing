@@ -62,9 +62,9 @@ The array must:
   {
     "profileId": "<uuid from candidates list>",
     "score": <integer 0–100>,
-    "reason": "<one sentence, max 20 words, summarising the match from the user's perspective>",
+    "reason": "<one sentence, max 20 words, summarising the match>",
     "breakdown": {
-      "summary": "<2–3 sentences explaining why this is a good match, written to the requesting user as 'you'>",
+      "summary": "<2–3 sentences explaining why this is a good match>",
       "alignments": [
         {
           "yourNeed": "<what the requesting user is looking for, e.g. 'Mentorship'>",
@@ -87,7 +87,7 @@ The array must:
 - NEVER invent a profileId. Only use IDs from the candidates list.
 - Reason must be specific to this pairing. Bad: "Great match." Good: "Senior FinTech founder who can invest and open doors in the African startup ecosystem."
 - breakdown.alignments: include only meaningful need↔offer pairs (1–4 items). Do not pad with weak alignments.
-- breakdown.summary: address the requesting user as "you". Be specific — reference their profession, needs, and the candidate's actual offers.
+- breakdown.summary: Be specific — reference the requesting user's profession, needs, and the candidate's actual offers. Use the perspective specified in the user message (either second person "you" or third person by name).
 - breakdown.gaps: 1–3 genuine mismatches only. If score is 90+, gaps may be []. Do not invent gaps.`
 
 export type CandidateProfile = {
@@ -137,11 +137,18 @@ export type MatchResult = {
 export function buildMatchingUserMessage(
   requesting: RequestingProfile,
   candidates: CandidateProfile[],
+  options?: { perspective?: 'second-person' | 'third-person' },
 ): string {
   const capped = candidates.slice(0, 30)
+  const perspective = options?.perspective ?? 'second-person'
+
+  const perspectiveInstruction = perspective === 'third-person'
+    ? `Write all text from a third-person admin perspective. Refer to the requesting user as "${requesting.firstName}" or "they/their" — never as "you" or "your".`
+    : `Write all text from the requesting user's perspective, addressing them as "you" and "your".`
 
   return JSON.stringify({
     requestingUser: requesting,
     candidates: capped,
+    perspective: perspectiveInstruction,
   }, null, 2)
 }
