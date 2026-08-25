@@ -92,7 +92,7 @@ export default async function AdminPage({
   const topNeeds = Object.entries(needCounts).sort((a, b) => b[1] - a[1]).slice(0, 8)
 
   return (
-    <div className="flex flex-col gap-8 p-6 max-w-5xl mx-auto w-full">
+    <div className="flex flex-col gap-8 p-6 w-full overflow-y-auto flex-1">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Admin dashboard</h1>
         <p className="text-sm text-muted-foreground">Platform-level match quality and engagement stats.</p>

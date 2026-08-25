@@ -78,7 +78,7 @@ export default async function ConnectionsPage() {
   )
 
   return (
-    <main className="flex flex-1 flex-col gap-6 p-4 max-w-lg mx-auto w-full py-8">
+    <main className="flex flex-1 flex-col gap-6 p-4 max-w-lg mx-auto w-full py-8 overflow-y-auto">
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">Connections</h1>
         <p className="text-sm text-muted-foreground">
