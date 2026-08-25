@@ -24,10 +24,11 @@ const NAV_ITEMS = [
 export function AppSidebar({ adminKey }: { adminKey?: string }) {
   const pathname = usePathname()
 
+  // Admin links no longer carry ?key= — cookie is set on first visit
   const adminItems = adminKey
     ? [
-        { label: 'Dashboard', href: `/admin?key=${adminKey}`, icon: LayoutDashboard },
-        { label: 'Match tester', href: `/admin/test-match?key=${adminKey}`, icon: FlaskConical },
+        { label: 'Dashboard', href: '/admin', icon: LayoutDashboard },
+        { label: 'Match tester', href: '/admin/test-match', icon: FlaskConical },
       ]
     : []
 

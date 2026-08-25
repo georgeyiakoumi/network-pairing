@@ -37,7 +37,7 @@ export function SwipeableCard({
   }
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full overflow-visible">
       {/* Pass indicator — left side */}
       <motion.div
         className="pointer-events-none absolute inset-0 z-10 flex items-center justify-start pl-6"

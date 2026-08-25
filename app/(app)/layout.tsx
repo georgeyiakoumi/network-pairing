@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="h-4" />
-          <AppBreadcrumbs adminKey={adminKey} />
+          <AppBreadcrumbs />
         </header>
         <main className="flex flex-1 flex-col min-h-0 bg-background">
           {children}

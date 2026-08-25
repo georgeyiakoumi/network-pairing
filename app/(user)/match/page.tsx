@@ -87,7 +87,7 @@ export default async function MatchPage() {
 
   if (!matchRows?.length) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center min-h-screen p-4">
+      <main className="flex flex-1 flex-col items-center p-4 overflow-y-auto">
         <MatchStack initialCards={[]} />
       </main>
     )
@@ -113,7 +113,7 @@ export default async function MatchPage() {
   })
 
   return (
-    <main className="flex flex-1 flex-col items-center justify-center min-h-screen p-4">
+    <main className="flex flex-1 flex-col items-center p-4 overflow-y-auto">
       <MatchStack initialCards={cards} />
     </main>
   )

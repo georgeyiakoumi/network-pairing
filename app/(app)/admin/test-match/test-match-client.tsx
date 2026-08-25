@@ -113,15 +113,18 @@ export function TestMatchClient({
         for (const line of lines) {
           if (!line.trim()) continue
           try {
-            const event = JSON.parse(line) as StreamEvent
-            if (event.type === 'log') {
+            const raw = JSON.parse(line)
+            if (!raw || typeof raw.type !== 'string') continue
+
+            const event = raw as StreamEvent
+            if (event.type === 'log' && typeof event.text === 'string') {
               setLogLines(prev => [...prev, event.text])
-            } else if (event.type === 'result') {
+            } else if (event.type === 'result' && Array.isArray(event.matches) && event.stats) {
               finalMatches = event.matches
               finalCalls = event.stats.chunks * 2
               setMatches(event.matches)
               setApiCalls(finalCalls)
-            } else if (event.type === 'error') {
+            } else if (event.type === 'error' && typeof event.error === 'string') {
               setError(event.error)
             }
           } catch {

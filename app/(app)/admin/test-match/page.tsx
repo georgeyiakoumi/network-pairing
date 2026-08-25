@@ -33,8 +33,14 @@ export default async function TestMatchPage({
 }: {
   searchParams: Promise<{ key?: string }>
 }) {
+  // Support both cookie (secure) and query param (legacy/first-access)
   const { key } = await searchParams
-  if (!ADMIN_KEY || key !== ADMIN_KEY) notFound()
+  const { cookies } = await import('next/headers')
+  const cookieStore = await cookies()
+  const cookieKey = cookieStore.get('admin_key')?.value
+  const adminKey = cookieKey || key
+
+  if (!ADMIN_KEY || adminKey !== ADMIN_KEY) notFound()
 
   const db = createServiceClient()
   const { data } = await db

@@ -2,10 +2,9 @@
 
 import { useState, useRef } from 'react'
 import { toast } from 'sonner'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
 import { X, Heart, CheckCircle } from 'lucide-react'
 import { BAND_LABELS } from '@/components/onboarding/types'
@@ -88,53 +87,34 @@ function MatchCardView({
   connecting: boolean
 }) {
   const tier = strengthTier(card.score)
+  const avatarUrl = `https://api.dicebear.com/9.x/lorelei/svg?seed=${encodeURIComponent(`${card.firstName} ${card.lastName}`)}`
+  const initials = `${card.firstName[0]}${card.lastName[0]}`
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardContent className="flex flex-col gap-5 pt-6 pb-5">
-        {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex flex-col gap-0.5">
-            <p className="text-lg font-semibold leading-tight">
-              {card.firstName} {card.lastName}
-            </p>
-            <p className="text-sm text-muted-foreground">{card.professionRole}</p>
-            <p className="text-xs text-muted-foreground">{BAND_LABELS[card.experienceBand] ?? ''}</p>
-          </div>
-          <span className={`text-xs font-medium px-2.5 py-1 rounded-full shrink-0 ${tier.className}`}>
-            {tier.label}
-          </span>
-        </div>
+    <Card className="w-full max-w-sm relative pt-12 overflow-visible">
+      {/* Avatar — centered, overlapping top edge */}
+      <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+        <Avatar className="size-20 ring-4 ring-background">
+          <AvatarImage className="bg-background" src={avatarUrl} alt={`${card.firstName} ${card.lastName}`} />
+          <AvatarFallback>{initials}</AvatarFallback>
+        </Avatar>
+      </div>
 
-        <Separator />
-
-        {/* Offers */}
-        {card.offerLabels.length > 0 && (
-          <CardSection label="They offer">
-            <div className="flex flex-wrap gap-1.5">
-              {card.offerLabels.map(label => (
-                <Badge key={label} variant="secondary">{label}</Badge>
-              ))}
-            </div>
-          </CardSection>
-        )}
-
-        {/* AI reason */}
-        <CardSection label="Why you match">
-          <p className="text-sm text-foreground leading-relaxed">&ldquo;{card.reason}&rdquo;</p>
-        </CardSection>
-
-        <Separator />
-
-        {/* Actions */}
-        <div className="flex gap-3">
-          <Button
+      <CardHeader className="justify-center gap-2">
+        <CardTitle className="text-2xl">{card.firstName} {card.lastName}</CardTitle>
+        <CardDescription className={`justify-self-center text-xs font-medium px-2.5 py-1 rounded-full ${tier.className}`}>{tier.label}</CardDescription>
+      </CardHeader>
+      <CardContent className="text-base text-muted-foreground leading-relaxed">
+       {card.reason}
+      </CardContent>
+      <CardFooter className="gap-2">
+        <Button
             variant="outline"
             className="flex-1 gap-2"
             onClick={onPass}
             disabled={connecting}
           >
-            <X className="size-4" aria-hidden="true" />
+            <X data-icon="inline-start" aria-hidden="true" />
             Pass
           </Button>
           <Button
@@ -142,11 +122,10 @@ function MatchCardView({
             onClick={onConnect}
             disabled={connecting}
           >
-            <Heart className="size-4" aria-hidden="true" />
+            <Heart data-icon="inline-start" aria-hidden="true" />
             {connecting ? 'Connecting…' : 'Connect'}
           </Button>
-        </div>
-      </CardContent>
+      </CardFooter>
     </Card>
   )
 }
@@ -175,10 +154,10 @@ export function MatchStack({ initialCards }: { initialCards: MatchCard[] }) {
         body: JSON.stringify({ matchId: card.matchId, reason }),
       })
       if (!res.ok) {
-        console.error('[commitPass] API returned', res.status)
+        toast.error('Failed to record pass. It may reappear later.')
       }
-    } catch (err) {
-      console.error('[commitPass] Network error:', err)
+    } catch {
+      toast.error('Network error — pass not saved.')
     }
   }
 
@@ -257,10 +236,11 @@ export function MatchStack({ initialCards }: { initialCards: MatchCard[] }) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-3 w-full max-w-sm">
-      <p className="text-xs text-muted-foreground self-end">
+    <div className="flex flex-col items-center w-full max-w-sm flex-1">
+      <p className="text-xs text-muted-foreground py-2">
         {currentIndex + 1} of {cards.length}
       </p>
+      <div className="flex flex-1 items-center">
       <SwipeableCard
         onSwipeLeft={handlePass}
         onSwipeRight={handleConnect}
@@ -273,6 +253,7 @@ export function MatchStack({ initialCards }: { initialCards: MatchCard[] }) {
           connecting={connecting}
         />
       </SwipeableCard>
+      </div>
     </div>
   )
 }

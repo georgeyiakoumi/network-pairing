@@ -38,6 +38,22 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/match', request.url))
   }
 
+  // Set admin cookie when visiting /admin with ?key= query param
+  // so subsequent admin navigations don't need the key in the URL
+  const adminKey = process.env.ADMIN_SECRET_KEY
+  if (adminKey && pathname.startsWith('/admin')) {
+    const queryKey = request.nextUrl.searchParams.get('key')
+    if (queryKey === adminKey && !request.cookies.get('admin_key')) {
+      supabaseResponse.cookies.set('admin_key', adminKey, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/admin',
+        maxAge: 60 * 60 * 24,
+      })
+    }
+  }
+
   return supabaseResponse
 }
 

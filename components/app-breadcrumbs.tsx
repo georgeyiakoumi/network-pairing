@@ -29,7 +29,7 @@ const ROUTE_PARENTS: Record<string, { label: string; href: string }[]> = {
   '/onboarding/guided': [{ label: 'Onboarding', href: '/onboarding' }],
 }
 
-export function AppBreadcrumbs({ adminKey }: { adminKey?: string }) {
+export function AppBreadcrumbs() {
   const pathname = usePathname()
 
   const label = ROUTE_LABELS[pathname]
@@ -37,20 +37,13 @@ export function AppBreadcrumbs({ adminKey }: { adminKey?: string }) {
 
   const parents = ROUTE_PARENTS[pathname] ?? []
 
-  function resolveHref(href: string) {
-    if (adminKey && href.startsWith('/admin')) {
-      return `${href}?key=${adminKey}`
-    }
-    return href
-  }
-
   return (
     <Breadcrumb>
       <BreadcrumbList>
         {parents.map((parent, i) => (
           <Fragment key={i}>
             <BreadcrumbItem>
-              <BreadcrumbLink render={<Link href={resolveHref(parent.href) as never} />}>
+              <BreadcrumbLink render={<Link href={parent.href as never} />}>
                 {parent.label}
               </BreadcrumbLink>
             </BreadcrumbItem>
