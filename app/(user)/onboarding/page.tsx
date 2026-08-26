@@ -125,12 +125,18 @@ export default function DirectOnboardingPage() {
   )
 
   return (
-    <div className="flex flex-1 flex-col items-center justify-center p-4 min-h-screen">
-      <div className="w-full max-w-sm flex flex-col gap-6">
+    <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Scrollable form content */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-4 pb-2">
+        <div className="w-full max-w-sm mx-auto flex flex-col gap-5">
+
+        {/* Progress dots — centered above the step */}
+        {step < STEPS.length - 1 && (
+          <div className="flex">{dots}</div>
+        )}
 
         {step === 0 && (
           <StepAbout
-            action={dots}
             firstName={firstName}
             lastName={lastName}
             graduationYear={graduationYear}
@@ -146,7 +152,6 @@ export default function DirectOnboardingPage() {
 
         {step === 1 && (
           <StepProfession
-            action={dots}
             professions={professions}
             primaryProfessionId={primaryProfessionId}
             primaryYears={primaryYears}
@@ -163,7 +168,6 @@ export default function DirectOnboardingPage() {
 
         {step === 2 && (
           <StepOffers
-            action={dots}
             offers={offers}
             professions={professions}
             selectedOffers={selectedOffers}
@@ -175,7 +179,6 @@ export default function DirectOnboardingPage() {
 
         {step === 3 && (
           <StepSeeking
-            action={dots}
             professions={professions}
             relationshipPrimary={seekingRelationshipPrimary}
             relationshipSecondary={seekingRelationshipSecondary}
@@ -213,8 +216,12 @@ export default function DirectOnboardingPage() {
           />
         )}
 
-        {/* nav */}
-        <div className="flex gap-3">
+        </div>
+      </div>
+
+      {/* Pinned bottom nav */}
+      <div className="shrink-0 p-4">
+        <div className="w-full max-w-sm mx-auto flex gap-3">
           {step > 0 && (
             <Button variant="outline" className="flex-1" onClick={() => setStep(s => s - 1)}>
               <ArrowLeft data-icon="inline-start" />
@@ -244,7 +251,6 @@ export default function DirectOnboardingPage() {
             </Button>
           )}
         </div>
-
       </div>
     </div>
   )

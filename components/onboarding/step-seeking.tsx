@@ -22,7 +22,6 @@ interface StepSeekingProps {
   specificNeeds: Option[]
   goal: string
   error: string | null
-  action?: React.ReactNode
   onRelationshipPrimaryChange: (id: string) => void
   onRelationshipSecondaryChange: (ids: string[]) => void
   onProfessionIdChange: (id: string) => void
@@ -38,7 +37,6 @@ export function StepSeeking({
   specificNeeds,
   goal,
   error,
-  action,
   onRelationshipPrimaryChange,
   onRelationshipSecondaryChange,
   onProfessionIdChange,
@@ -58,20 +56,18 @@ export function StepSeeking({
     if (data.seekingGoal) onGoalChange(data.seekingGoal)
   }
 
-  const aiLink = (
-    <button
-      type="button"
-      onClick={() => setSheetOpen(true)}
-      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"
-    >
-      <MessageCircle className="size-3.5" />
-      Not sure who you need? Let AI help
-    </button>
-  )
-
   return (
     <>
-      <OnboardingStep title="Who are you looking for?" action={action} subtitle={aiLink}>
+      <OnboardingStep title="Who are you looking for?">
+
+        <button
+          type="button"
+          onClick={() => setSheetOpen(true)}
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors w-fit -mt-4"
+        >
+          <MessageCircle className="size-3.5" />
+          Not sure who you need? Let AI help
+        </button>
 
         <RelationshipTypeSelector
           types={RELATIONSHIP_TYPES}

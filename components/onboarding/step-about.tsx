@@ -34,7 +34,6 @@ interface StepAboutProps {
   locationId: string
   locations: Location[]
   lookupsReady: boolean
-  action?: React.ReactNode
   onFirstNameChange: (v: string) => void
   onLastNameChange: (v: string) => void
   onGraduationYearChange: (v: string) => void
@@ -48,7 +47,6 @@ export function StepAbout({
   locationId,
   locations,
   lookupsReady,
-  action,
   onFirstNameChange,
   onLastNameChange,
   onGraduationYearChange,
@@ -65,7 +63,7 @@ export function StepAbout({
   const selected = groupedLocations.flatMap(g => g.items).find(l => l.id === locationId) ?? null
 
   return (
-    <OnboardingStep title="About you" action={action}>
+    <OnboardingStep title="About you">
       <div className="flex gap-3">
         <FieldGroup className="flex-1">
           <Field>

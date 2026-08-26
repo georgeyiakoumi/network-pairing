@@ -15,7 +15,6 @@ interface StepProfessionProps {
   secondaryProfessionId: string
   secondaryYears: number
   showSecondary: boolean
-  action?: React.ReactNode
   onPrimaryProfessionChange: (id: string) => void
   onPrimaryYearsChange: (years: number) => void
   onSecondaryProfessionChange: (id: string) => void
@@ -30,7 +29,6 @@ export function StepProfession({
   secondaryProfessionId,
   secondaryYears,
   showSecondary,
-  action,
   onPrimaryProfessionChange,
   onPrimaryYearsChange,
   onSecondaryProfessionChange,
@@ -38,7 +36,7 @@ export function StepProfession({
   onShowSecondaryChange,
 }: StepProfessionProps) {
   return (
-    <OnboardingStep title="What do you do?" action={action}>
+    <OnboardingStep title="What do you do?">
         <ProfessionCombobox
           professions={professions}
           value={primaryProfessionId}
