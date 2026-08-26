@@ -18,7 +18,6 @@ import {
   ComboboxValue,
 } from '@/components/ui/combobox'
 import { Button } from '@/components/ui/button'
-import { OnboardingStep } from './onboarding-step'
 import type { Location } from './types'
 
 const MIN_YEAR = 1960
@@ -63,7 +62,7 @@ export function StepAbout({
   const selected = groupedLocations.flatMap(g => g.items).find(l => l.id === locationId) ?? null
 
   return (
-    <OnboardingStep title="About you">
+    <>
       <div className="flex gap-3">
         <FieldGroup className="flex-1">
           <Field>
@@ -159,6 +158,6 @@ export function StepAbout({
         </Combobox>
         )}
       </div>
-    </OnboardingStep>
+    </>
   )
 }

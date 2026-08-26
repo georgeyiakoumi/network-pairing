@@ -2,7 +2,6 @@
 
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Badge } from '@/components/ui/badge'
-import { OnboardingStep } from './onboarding-step'
 import { ProfessionCombobox } from '@/components/profession-combobox'
 import { ExperienceSlider } from '@/components/experience-slider'
 import { Plus } from 'lucide-react'
@@ -36,7 +35,7 @@ export function StepProfession({
   onShowSecondaryChange,
 }: StepProfessionProps) {
   return (
-    <OnboardingStep title="What do you do?">
+    <>
         <ProfessionCombobox
           professions={professions}
           value={primaryProfessionId}
@@ -103,6 +102,6 @@ export function StepProfession({
             onYearsChange={onSecondaryYearsChange}
           />
         )}
-    </OnboardingStep>
+    </>
   )
 }

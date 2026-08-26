@@ -1,7 +1,6 @@
 'use client'
 
 import { MultiSelectCombobox } from '@/components/multi-select-combobox'
-import { OnboardingStep } from './onboarding-step'
 import { buildOfferLabelOverrides } from './types'
 import type { Option, Profession } from './types'
 
@@ -23,7 +22,7 @@ export function StepOffers({
   onSelectedOffersChange,
 }: StepOffersProps) {
   return (
-    <OnboardingStep title="What do you offer?">
+    <>
       <MultiSelectCombobox
         options={offers}
         value={selectedOffers}
@@ -32,6 +31,6 @@ export function StepOffers({
         max={3}
         labelOverrides={buildOfferLabelOverrides(offers, professions, primaryProfessionId, secondaryProfessionId)}
       />
-    </OnboardingStep>
+    </>
   )
 }

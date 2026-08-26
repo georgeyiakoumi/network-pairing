@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field'
 import { Label } from '@/components/ui/label'
 import { MessageCircle } from 'lucide-react'
-import { OnboardingStep } from './onboarding-step'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ProfessionCombobox } from '@/components/profession-combobox'
 import { MultiSelectCombobox } from '@/components/multi-select-combobox'
@@ -58,7 +57,7 @@ export function StepSeeking({
 
   return (
     <>
-      <OnboardingStep title="Who are you looking for?">
+      <>
 
         <button
           type="button"
@@ -132,7 +131,7 @@ export function StepSeeking({
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}
-      </OnboardingStep>
+      </>
 
       <SeekingAssistantSheet
         open={sheetOpen}
