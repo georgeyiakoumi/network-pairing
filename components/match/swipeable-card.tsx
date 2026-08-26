@@ -1,7 +1,7 @@
 'use client'
 
 import { useMotionValue, useTransform, motion, type PanInfo } from 'framer-motion'
-import { X, Heart } from 'lucide-react'
+import { X, Handshake } from 'lucide-react'
 
 const SWIPE_THRESHOLD = 100
 const VELOCITY_THRESHOLD = 500
@@ -37,28 +37,24 @@ export function SwipeableCard({
   }
 
   return (
-    <div className="relative w-full overflow-visible">
-      {/* Pass indicator — left side */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-start pl-6"
-        style={{ opacity: passOpacity }}
-      >
-        <div className="flex items-center gap-2 rounded-full bg-destructive/10 px-4 py-2 text-destructive font-semibold text-sm border-2 border-destructive/30">
+    <div className="flex flex-col gap-3 w-full overflow-visible">
+      {/* Swipe indicators — above the card, centered */}
+      <div className="relative h-10 flex items-center justify-center">
+        <motion.div
+          className="absolute flex items-center gap-2 rounded-full bg-destructive/10 px-5 py-2 text-destructive font-semibold text-base border-2 border-destructive/30"
+          style={{ opacity: passOpacity }}
+        >
           <X className="size-5" />
           Pass
-        </div>
-      </motion.div>
-
-      {/* Connect indicator — right side */}
-      <motion.div
-        className="pointer-events-none absolute inset-0 z-10 flex items-center justify-end pr-6"
-        style={{ opacity: connectOpacity }}
-      >
-        <div className="flex items-center gap-2 rounded-full bg-emerald-500/10 px-4 py-2 text-emerald-600 dark:text-emerald-400 font-semibold text-sm border-2 border-emerald-500/30">
-          <Heart className="size-5" />
+        </motion.div>
+        <motion.div
+          className="absolute flex items-center gap-2 rounded-full bg-emerald-500/10 px-5 py-2 text-emerald-600 dark:text-emerald-400 font-semibold text-base border-2 border-emerald-500/30"
+          style={{ opacity: connectOpacity }}
+        >
+          <Handshake className="size-5" />
           Connect
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Draggable card */}
       <motion.div

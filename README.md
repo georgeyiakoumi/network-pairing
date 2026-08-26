@@ -15,7 +15,8 @@ Built as a demo for a South African university alumni network.
 | Components | shadcn/ui — Base UI |
 | Icons | Lucide React |
 | Database | Supabase |
-| AI matching | Claude API (Anthropic) |
+| AI matching | Claude API (Anthropic) — claude-haiku-4-5 |
+| Animations | Framer Motion (swipe gestures) |
 | Deployment | Netlify |
 
 ---
@@ -42,12 +43,27 @@ Copy `.env.example` to `.env.local` and fill in your credentials:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ANTHROPIC_API_KEY=your-anthropic-key
+ADMIN_SECRET_KEY=your-admin-key
 ```
 
 Supabase credentials: **Settings → API** in your Supabase project.
 Anthropic key: **console.anthropic.com**.
+
+### Mobile testing
+
+To test on your phone (same Wi-Fi network):
+
+```bash
+npm run dev -- -H 0.0.0.0
+```
+
+Then open `http://<your-local-ip>:3000` on your phone.
+
+### Dev shortcut
+
+Sign up as `test@test.com` in development mode to skip onboarding — all fields are pre-filled and you land on the review step. Hit "Create profile" to test the post-onboarding flow.
 
 ---
 
@@ -57,34 +73,55 @@ Anthropic key: **console.anthropic.com**.
 |---|---|---|
 | Sign up | `/signup` | Create a new alumni account |
 | Sign in | `/login` | Log in to an existing account |
-| Onboarding | `/onboarding` | Profile setup — guided or direct |
-| Match feed | `/match` | Swipe-style match UI (requires a complete profile) |
-| Connections | `/connections` | Accepted matches |
-| Admin dashboard | `/admin?key=YOUR_ADMIN_SECRET_KEY` | Requires `ADMIN_SECRET_KEY` from `.env.local` |
-| Match tester | `/admin/test-match?key=YOUR_ADMIN_SECRET_KEY` | Run the AI matching engine against any profile — results not persisted |
+| Onboarding | `/onboarding` | Profile setup — 4 steps + review |
+| Match feed | `/match` | Swipe-style match cards (requires a complete profile) |
+| Connections | `/connections` | Accepted matches with match breakdown drawer |
+| Profile | `/profile` | View and edit your profile, sign out |
+| Admin dashboard | `/admin?key=YOUR_KEY` | Stats, match quality, dataviz |
+| Match tester | `/admin/test-match?key=YOUR_KEY` | Run the AI matching engine against any profile |
 
-The admin key is set via `ADMIN_SECRET_KEY` in `.env.local`. Anyone without the correct key gets a 404.
+### Admin access
+
+The admin key is set via `ADMIN_SECRET_KEY` in `.env.local`. On first visit with `?key=...`, an HttpOnly cookie is set — subsequent admin navigation doesn't require the key in the URL.
+
+The admin section is desktop-only (sidebar hidden on mobile).
+
+---
+
+## Route groups
+
+| Group | Pages | Layout |
+|---|---|---|
+| `(user)` | match, connections, onboarding, profile | Minimal mobile header — no sidebar |
+| `(app)` | admin, admin/test-match | Full sidebar + breadcrumbs (desktop) |
+| `(auth)` | login, signup | Centered auth shell |
 
 ---
 
 ## Repo structure
 
 ```
-├── app/
-│   ├── (auth)/          # Sign up / sign in
-│   ├── (app)/           # Main app — matching UI, profile
-│   ├── admin/           # Admin dashboard
-│   ├── globals.css      # Tailwind v4 + shadcn tokens
-│   └── layout.tsx
-├── components/ui/       # shadcn components
-├── lib/
-│   ├── supabase/        # Supabase client + server helpers
-│   └── utils.ts
-├── scripts/             # Seed script for fake alumni profiles
-├── supabase/            # Migrations and config
-├── .env.example
-├── netlify.toml
-└── package.json
+app/
+  (auth)/               # Sign up / sign in
+  (user)/               # Consumer pages — match, connections, profile, onboarding
+  (app)/                # Admin pages — dashboard, match tester
+  api/                  # API routes — matches, admin, auth
+  globals.css           # Tailwind v4 + shadcn tokens
+  layout.tsx            # Root layout — ThemeProvider, Toaster
+components/
+  ui/                   # shadcn components
+  onboarding/           # Onboarding step components + nav + dots
+  match/                # Match card stack + swipeable card
+  connections/          # Connection card with drawer breakdown
+  profile/              # Profile view + edit drawers
+  admin/test-match/     # Admin match tester components
+lib/
+  matching/             # AI matching engine — prompt, pre-filter, runner, DB helpers
+  supabase/             # Supabase client + server helpers
+  onboarding/           # Profile save logic
+hooks/                  # useIsMobile
+scripts/                # Seed script for fake alumni profiles
+supabase/               # Migrations and config
 ```
 
 ---
@@ -98,4 +135,4 @@ Configured for Netlify via `netlify.toml`.
 3. Add environment variables in **Site → Environment variables**
 4. Deploy
 
-**Important:** Disable auto-publishing during active development — Netlify's free tier has limited build credits. Site settings → Build & deploy → Stop auto publishing.
+Live: [https://network-pairing.netlify.app](https://network-pairing.netlify.app)

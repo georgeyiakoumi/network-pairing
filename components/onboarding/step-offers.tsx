@@ -1,7 +1,6 @@
 'use client'
 
 import { MultiSelectCombobox } from '@/components/multi-select-combobox'
-import { OnboardingStep } from './onboarding-step'
 import { buildOfferLabelOverrides } from './types'
 import type { Option, Profession } from './types'
 
@@ -11,7 +10,6 @@ interface StepOffersProps {
   selectedOffers: Option[]
   primaryProfessionId: string
   secondaryProfessionId: string
-  action?: React.ReactNode
   onSelectedOffersChange: (offers: Option[]) => void
 }
 
@@ -21,11 +19,10 @@ export function StepOffers({
   selectedOffers,
   primaryProfessionId,
   secondaryProfessionId,
-  action,
   onSelectedOffersChange,
 }: StepOffersProps) {
   return (
-    <OnboardingStep title="What do you offer?" action={action}>
+    <>
       <MultiSelectCombobox
         options={offers}
         value={selectedOffers}
@@ -34,6 +31,6 @@ export function StepOffers({
         max={3}
         labelOverrides={buildOfferLabelOverrides(offers, professions, primaryProfessionId, secondaryProfessionId)}
       />
-    </OnboardingStep>
+    </>
   )
 }

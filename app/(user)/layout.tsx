@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Users, Settings } from 'lucide-react'
+import { Settings } from 'lucide-react'
+import { HeaderNavIcon } from '@/components/header-nav-icon'
 
 export default async function UserLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -30,19 +31,20 @@ export default async function UserLayout({ children }: { children: React.ReactNo
 
   return (
     <div className="flex h-svh flex-col overflow-hidden bg-background">
-      <header className="grid h-12 shrink-0 grid-cols-3 items-center border-b border-border px-4">
-        <Link href="/connections" className="relative justify-self-start" aria-label={`Connections (${connectionCount})`}>
-          <Users className="size-5 text-muted-foreground" />
-          {connectionCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 flex size-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
-              {connectionCount}
-            </span>
-          )}
-        </Link>
-        <span className="text-sm font-semibold text-center">AlumniConnect</span>
-        <Link href="/profile" className="justify-self-end" aria-label="Settings">
-          <Settings className="size-5 text-muted-foreground" />
-        </Link>
+      <header className="grid h-12 shrink-0 grid-cols-3 items-center px-4">
+        {profile ? (
+          <HeaderNavIcon connectionCount={connectionCount} />
+        ) : (
+          <div />
+        )}
+        <Link href="/match" className="text-sm font-semibold text-center">AlumniConnect</Link>
+        {profile ? (
+          <Link href="/profile" className="justify-self-end" aria-label="Settings">
+            <Settings className="size-5 text-muted-foreground" />
+          </Link>
+        ) : (
+          <div />
+        )}
       </header>
       <main className="flex flex-1 flex-col min-h-0">
         {children}
