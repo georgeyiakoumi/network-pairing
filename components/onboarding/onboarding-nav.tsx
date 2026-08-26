@@ -2,6 +2,7 @@
 
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
+import { Spinner } from '@/components/ui/spinner'
 import { ArrowLeft, ArrowRight, FileCheck } from 'lucide-react'
 
 interface OnboardingNavProps {
@@ -57,7 +58,7 @@ export function OnboardingNav({
           )
         ) : (
           <Button className="flex-1" disabled={loading} onClick={onSubmit}>
-            {loading ? 'Saving…' : 'Create profile'}
+            {loading ? <><Spinner data-icon="inline-start" /> Creating your profile…</> : 'Create profile'}
           </Button>
         )}
       </div>

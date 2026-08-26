@@ -17,6 +17,20 @@ type DbMatch = {
   } | null
 }
 
+const PENDING_MATCH_SELECT = `
+  id,
+  profile_b_id,
+  match_score,
+  match_reason,
+  profiles_b:profile_b_id(
+    first_name,
+    last_name,
+    primary_experience,
+    professions:primary_profession_id(category, role),
+    profile_offers(offers:offer_id(label))
+  )
+` as const
+
 export default async function MatchPage() {
   const cookieStore = await cookies()
   const supabase = createServerClient(
@@ -46,48 +60,54 @@ export default async function MatchPage() {
   // ── Run matching in background (non-blocking) ──────────────────────────────
   // Generates new matches if needed, but we don't wait for it to finish
   // before loading the page. Existing pending matches are shown immediately.
-  const baseUrl =
-    process.env.NEXT_PUBLIC_APP_URL ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    'http://localhost:3000'
+  // Use a relative URL via the request origin to avoid cookie leakage
+  // to a misconfigured NEXT_PUBLIC_APP_URL
+  const { headers } = await import('next/headers')
+  const headerList = await headers()
+  const host = headerList.get('host') ?? 'localhost:3000'
+  const protocol = headerList.get('x-forwarded-proto') ?? 'http'
+  const baseUrl = `${protocol}://${host}`
   const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
 
-  // Fire and forget — don't block page load
-  fetch(`${baseUrl}/api/matches/generate`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Cookie: cookieHeader,
-    },
-    cache: 'no-store',
-  }).catch(() => {
-    // Silently ignore — existing matches will still show
-  })
-
   // ── Load existing pending matches from DB ──────────────────────────────────
-  const { data: matchRows } = await serviceSupabase
+  let { data: matchRows } = await serviceSupabase
     .from('matches')
-    .select(`
-      id,
-      profile_b_id,
-      match_score,
-      match_reason,
-      profiles_b:profile_b_id(
-        first_name,
-        last_name,
-        primary_experience,
-        professions:primary_profession_id(category, role),
-        profile_offers(offers:offer_id(label))
-      )
-    `)
+    .select(PENDING_MATCH_SELECT)
     .eq('profile_a_id', profile.id)
     .eq('status', 'pending')
     .order('match_score', { ascending: false })
     .limit(10) as { data: DbMatch[] | null }
 
+  // If no pending matches, generate them (blocking) then re-query
+  if (!matchRows?.length) {
+    try {
+      await fetch(`${baseUrl}/api/matches/generate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: cookieHeader,
+        },
+        cache: 'no-store',
+      })
+
+      // Re-query after generation
+      const { data: freshRows } = await serviceSupabase
+        .from('matches')
+        .select(PENDING_MATCH_SELECT)
+        .eq('profile_a_id', profile.id)
+        .eq('status', 'pending')
+        .order('match_score', { ascending: false })
+        .limit(10) as { data: DbMatch[] | null }
+
+      matchRows = freshRows
+    } catch {
+      // Generation failed — show empty state
+    }
+  }
+
   if (!matchRows?.length) {
     return (
-      <main className="flex flex-1 flex-col items-center p-4 overflow-y-auto">
+      <main className="flex flex-1 flex-col items-center justify-center p-4 overflow-y-auto">
         <MatchStack initialCards={[]} />
       </main>
     )

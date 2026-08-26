@@ -9,8 +9,14 @@ import { cn } from "@/lib/utils";
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: 'Project',
-  description: 'Built with Next.js, shadcn/ui, and Tailwind CSS.',
+  title: 'AlumniConnect',
+  description: 'AI-powered alumni professional matching.',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({

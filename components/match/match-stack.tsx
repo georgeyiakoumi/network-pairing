@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { Empty, EmptyHeader, EmptyMedia, EmptyTitle, EmptyDescription } from '@/components/ui/empty'
-import { X, Heart, CheckCircle } from 'lucide-react'
+import { X, Handshake, CheckCircle } from 'lucide-react'
 import { BAND_LABELS } from '@/components/onboarding/types'
 import { SwipeableCard } from '@/components/match/swipeable-card'
 
@@ -51,7 +52,7 @@ function EmptyState() {
     <Empty>
       <EmptyHeader>
         <EmptyMedia variant="icon">
-          <Heart />
+          <Handshake />
         </EmptyMedia>
         <EmptyTitle>You&apos;ve seen everyone</EmptyTitle>
         <EmptyDescription>
@@ -122,7 +123,7 @@ function MatchCardView({
             onClick={onConnect}
             disabled={connecting}
           >
-            <Heart data-icon="inline-start" aria-hidden="true" />
+            <Handshake data-icon="inline-start" aria-hidden="true" />
             {connecting ? 'Connecting…' : 'Connect'}
           </Button>
       </CardFooter>
@@ -133,6 +134,7 @@ function MatchCardView({
 // ─── Main stack ───────────────────────────────────────────────────────────────
 
 export function MatchStack({ initialCards }: { initialCards: MatchCard[] }) {
+  const router = useRouter()
   const [cards] = useState(initialCards)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [connecting, setConnecting] = useState(false)
@@ -220,12 +222,17 @@ export function MatchStack({ initialCards }: { initialCards: MatchCard[] }) {
       })
       if (res.ok) {
         advance()
+        router.refresh()
         toast.success(`Connected with ${connected.firstName}!`, {
           description: 'View their contact details in your Connections.',
           icon: <CheckCircle className="size-4" />,
           duration: 4000,
         })
+      } else {
+        toast.error('Failed to connect. Please try again.')
       }
+    } catch {
+      toast.error('Network error — connection not saved.')
     } finally {
       setConnecting(false)
     }
