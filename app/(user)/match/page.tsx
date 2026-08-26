@@ -81,6 +81,9 @@ export default async function MatchPage() {
   // If no pending matches, generate them (blocking) then re-query
   if (!matchRows?.length) {
     try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 120_000) // 2 min timeout
+
       await fetch(`${baseUrl}/api/matches/generate`, {
         method: 'POST',
         headers: {
@@ -88,7 +91,9 @@ export default async function MatchPage() {
           Cookie: cookieHeader,
         },
         cache: 'no-store',
+        signal: controller.signal,
       })
+      clearTimeout(timeout)
 
       // Re-query after generation
       const { data: freshRows } = await serviceSupabase

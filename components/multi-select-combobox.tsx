@@ -1,18 +1,6 @@
 'use client'
 
-import * as React from 'react'
-import {
-  Combobox,
-  ComboboxChip,
-  ComboboxChips,
-  ComboboxChipsInput,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxValue,
-  useComboboxAnchor,
-} from '@/components/ui/combobox'
+import { ResponsiveMultiCombobox, type ComboboxOption } from '@/components/responsive-combobox'
 
 type Option = { id: string; label: string }
 
@@ -22,7 +10,6 @@ interface MultiSelectComboboxProps {
   onValueChange: (value: Option[]) => void
   placeholder?: string
   max?: number
-  /** Override the display label for specific option IDs */
   labelOverrides?: Record<string, string>
 }
 
@@ -34,54 +21,31 @@ export function MultiSelectCombobox({
   max = 3,
   labelOverrides = {},
 }: MultiSelectComboboxProps) {
-  const anchor = useComboboxAnchor()
+  const comboboxOptions: ComboboxOption[] = options.map(o => ({
+    value: o.id,
+    label: o.label,
+  }))
 
-  function displayLabel(o: Option) {
-    return labelOverrides[o.id] ?? o.label
-  }
+  const selectedIds = value.map(v => v.id)
 
-  const atMax = value.length >= max
-
-  function handleValueChange(newValue: Option[]) {
-    if (newValue.length > max) return
-    onValueChange(newValue)
+  function handleChange(ids: string[]) {
+    const selected = ids
+      .map(id => options.find(o => o.id === id))
+      .filter(Boolean) as Option[]
+    onValueChange(selected)
   }
 
   return (
-    <Combobox<Option, true>
-      multiple
-      autoHighlight
-      items={options}
-      value={value}
-      onValueChange={handleValueChange}
-      itemToStringLabel={item => (item ? displayLabel(item) : '')}
-      isItemEqualToValue={(a, b) => a.id === b.id}
-    >
-      <ComboboxChips ref={anchor} className="w-full">
-        <ComboboxValue placeholder={placeholder}>
-          {(values: Option[]) => (
-            <React.Fragment>
-              {values.map(v => (
-                <ComboboxChip key={v.id} className="min-w-0">
-                  <span className="truncate">{displayLabel(v)}</span>
-                </ComboboxChip>
-              ))}
-              {!atMax && <ComboboxChipsInput placeholder={values.length === 0 ? placeholder : ''} />}
-            </React.Fragment>
-          )}
-        </ComboboxValue>
-      </ComboboxChips>
-
-      <ComboboxContent anchor={anchor}>
-        <ComboboxEmpty>No options found.</ComboboxEmpty>
-        <ComboboxList>
-          {(o: Option) => (
-            <ComboboxItem key={o.id} value={o}>
-              {displayLabel(o)}
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-      </ComboboxContent>
-    </Combobox>
+    <ResponsiveMultiCombobox
+      options={comboboxOptions}
+      value={selectedIds}
+      onValueChange={handleChange}
+      placeholder={placeholder}
+      searchPlaceholder="Search…"
+      emptyText="No options found."
+      drawerTitle="Select options"
+      max={max}
+      labelOverrides={labelOverrides}
+    />
   )
 }

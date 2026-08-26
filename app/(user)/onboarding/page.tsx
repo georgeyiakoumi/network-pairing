@@ -57,15 +57,40 @@ export default function DirectOnboardingPage() {
   useEffect(() => {
     async function fetchLookups() {
       const supabase = createClient()
-      const [{ data: profs }, { data: ofrs }, { data: locs }] = await Promise.all([
+      const [{ data: profs }, { data: ofrs }, { data: locs }, { data: { user } }] = await Promise.all([
         supabase.from('professions').select('id, category, role').eq('active', true).order('category').order('sort_order'),
         supabase.from('offers').select('id, label').eq('active', true).order('sort_order'),
         supabase.from('locations').select('id, label, category').eq('active', true).order('sort_order'),
+        supabase.auth.getUser(),
       ])
       if (profs) setProfessions(profs)
       if (ofrs) setOffers(ofrs)
       if (locs) setLocations(locs)
       setLookupsReady(true)
+
+      // Dev shortcut: pre-fill for test@test.com → jump to review (dev only)
+      if (process.env.NODE_ENV === 'development' && user?.email === 'test@test.com' && profs && ofrs && locs) {
+        const designer = profs.find(p => p.role === 'Product Designer')
+        const founder = profs.find(p => p.role === 'Founder / CEO')
+        const jhb = locs.find(l => l.label === 'Johannesburg')
+        const mentorship = ofrs.find(o => o.label === 'Mentorship')
+        const techSkills = ofrs.find(o => o.label === 'Technical skills')
+
+        setFirstName('Test')
+        setLastName('User')
+        setGraduationYear('2022')
+        if (jhb) setLocationId(jhb.id)
+        if (designer) { setPrimaryProfessionId(designer.id); setPrimaryYears(5) }
+        if (founder) { setSecondaryProfessionId(founder.id); setSecondaryYears(2); setShowSecondary(true) }
+        if (mentorship && techSkills) setSelectedOffers([mentorship, techSkills])
+        setSeekingRelationshipPrimary('mentor')
+        setSeekingSpecificNeeds(
+          ofrs.filter(o => ['Business strategy', 'Funding access'].includes(o.label)).map(o => ({ id: o.id, label: o.label }))
+        )
+        setSeekingGoal('starting-a-business')
+        setHasReachedReview(true)
+        setStep(STEPS.length - 1)
+      }
     }
     fetchLookups()
   }, [])
