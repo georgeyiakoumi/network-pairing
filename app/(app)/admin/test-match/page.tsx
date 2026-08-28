@@ -92,5 +92,5 @@ export default async function TestMatchPage({
     }
   })
 
-  return <TestMatchClient profiles={profiles} adminKey={key} />
+  return <TestMatchClient profiles={profiles} adminKey={adminKey} />
 }
