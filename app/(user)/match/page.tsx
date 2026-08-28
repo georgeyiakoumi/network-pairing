@@ -2,6 +2,8 @@ import { redirect } from 'next/navigation'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { MatchStack, type MatchCard } from '@/components/match/match-stack'
+import { createServiceClient } from '@/lib/supabase/server'
+import { generateAndPersistMatches } from '@/lib/matching/generate-matches'
 
 type DbMatch = {
   id: string
@@ -51,26 +53,10 @@ export default async function MatchPage() {
   if (!profile) redirect('/onboarding')
 
   // ── Service-role client for reading matches ──────────────────────────────
-  const serviceSupabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: () => [], setAll: () => {} } }
-  )
-
-  // ── Run matching in background (non-blocking) ──────────────────────────────
-  // Generates new matches if needed, but we don't wait for it to finish
-  // before loading the page. Existing pending matches are shown immediately.
-  // Use a relative URL via the request origin to avoid cookie leakage
-  // to a misconfigured NEXT_PUBLIC_APP_URL
-  const { headers } = await import('next/headers')
-  const headerList = await headers()
-  const host = headerList.get('host') ?? 'localhost:3000'
-  const protocol = headerList.get('x-forwarded-proto') ?? 'http'
-  const baseUrl = `${protocol}://${host}`
-  const cookieHeader = cookieStore.getAll().map(c => `${c.name}=${c.value}`).join('; ')
+  const serviceClient = createServiceClient()
 
   // ── Load existing pending matches from DB ──────────────────────────────────
-  let { data: matchRows } = await serviceSupabase
+  let { data: matchRows } = await serviceClient
     .from('matches')
     .select(PENDING_MATCH_SELECT)
     .eq('profile_a_id', profile.id)
@@ -78,25 +64,13 @@ export default async function MatchPage() {
     .order('match_score', { ascending: false })
     .limit(10) as { data: DbMatch[] | null }
 
-  // If no pending matches, generate them (blocking) then re-query
+  // If no pending matches, generate them directly (no self-fetch) then re-query
   if (!matchRows?.length) {
     try {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 120_000) // 2 min timeout
-
-      await fetch(`${baseUrl}/api/matches/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Cookie: cookieHeader,
-        },
-        cache: 'no-store',
-        signal: controller.signal,
-      })
-      clearTimeout(timeout)
+      await generateAndPersistMatches(user.id, serviceClient)
 
       // Re-query after generation
-      const { data: freshRows } = await serviceSupabase
+      const { data: freshRows } = await serviceClient
         .from('matches')
         .select(PENDING_MATCH_SELECT)
         .eq('profile_a_id', profile.id)
